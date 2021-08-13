@@ -39,4 +39,22 @@ export class BodyPosition {
 		this._object.body.setPosition(position);
 		this._object.updateTransform();
 	}
+	
+	set(x: number, y?: number, z?: number) {
+		if (y === undefined) {
+			y = x;
+		}
+		
+		if (z === undefined) {
+			z = y;
+		}
+		
+		const position = this._object.body.getPosition();
+		position.x = x;
+		position.y = y;
+		position.z = z;
+		
+		this._object.body.setPosition(position);
+		this._object.updateTransform();
+	}
 }

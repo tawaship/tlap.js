@@ -726,6 +726,11 @@
     }, prototypeAccessors$2.z.set = function(value) {
         var position = this._object.body.getPosition();
         position.z = value, this._object.body.setPosition(position), this._object.updateTransform();
+    }, BodyPosition.prototype.set = function(x, y, z) {
+        void 0 === y && (y = x), void 0 === z && (z = y);
+        var position = this._object.body.getPosition();
+        position.x = x, position.y = y, position.z = z, this._object.body.setPosition(position), 
+        this._object.updateTransform();
     }, Object.defineProperties(BodyPosition.prototype, prototypeAccessors$2);
     var BodyRotation = function(object) {
         this._object = object;
@@ -755,6 +760,11 @@
     }, prototypeAccessors$3.z.set = function(value) {
         var rotation = this._object.body.getRotation().toEulerXyz();
         rotation.z = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
+    }, BodyRotation.prototype.set = function(x, y, z) {
+        void 0 === y && (y = x), void 0 === z && (z = y);
+        var rotation = this._object.body.getRotation().toEulerXyz();
+        rotation.x = x, rotation.y = y, rotation.z = z, this._object.body.setRotationXyz(rotation), 
+        this._object.updateTransform();
     }, Object.defineProperties(BodyRotation.prototype, prototypeAccessors$3);
     var PhysicsObject3D = function(Object3D) {
         function PhysicsObject3D(three, body) {

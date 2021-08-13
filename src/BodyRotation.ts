@@ -39,4 +39,22 @@ export class BodyRotation {
 		this._object.body.setRotationXyz(rotation);
 		this._object.updateTransform();
 	}
+	
+	set(x: number, y?: number, z?: number) {
+		if (y === undefined) {
+			y = x;
+		}
+		
+		if (z === undefined) {
+			z = y;
+		}
+		
+		const rotation = this._object.body.getRotation().toEulerXyz();
+		rotation.x = x;
+		rotation.y = y;
+		rotation.z = z;
+		
+		this._object.body.setRotationXyz(rotation);
+		this._object.updateTransform();
+	}
 }
