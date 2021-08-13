@@ -1,0 +1,14 @@
+node_modules/
+docs/
+src/
+test/
+lib/
+npm/
+.travis.yml
+.gitignore
+jsdoc.json
+tsconfig.json
+rollup.config.js
+samples/
+index.html
+style.css

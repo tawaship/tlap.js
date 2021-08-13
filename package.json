@@ -1,0 +1,58 @@
+{
+  "name": "@tawaship/trap.js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/trap.js.cjs.js",
+  "module": "dist/trap.js.esm.js",
+  "types": "types/index.d.ts",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib"
+  },
+  "scripts": {
+    "rollup": "rollup -c",
+    "d": "tsc --target ES6 --declaration --emitDeclarationOnly --outDir ./types",
+    "docs": "typedoc --tsconfig tsconfig.json",
+    "watch": "npm run rollup -- -w",
+    "test": "floss --path test/ --reporter=tap",
+    "build": "ENV PROD=1 npm run rollup && npm run docs && npm run d && echo done."
+  },
+  "keywords": [
+    "pixi.js",
+    "pixi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tawaship/trap.js.git"
+  },
+  "author": "tawaship",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tawaship/trap.js/issues"
+  },
+  "homepage": "https://tawaship.github.io/trap.js/",
+  "devDependencies": {
+    "@rollup/plugin-buble": "^0.21.3",
+    "@rollup/plugin-commonjs": "^11.0.2",
+    "@rollup/plugin-node-resolve": "^7.1.1",
+    "@rollup/plugin-typescript": "^5.0.2",
+    "@tawaship/emitter": "^3.1.1",
+    "@tawaship/task": "^1.1.0",
+    "@types/three": "^0.131.0",
+    "del": "^5.1.0",
+    "electron": "^11.1.1",
+    "floss": "^3.0.1",
+    "howler": "^2.2.0",
+    "ismobilejs": "^1.1.1",
+    "nyc": "^15.0.0",
+    "rollup": "2.14.0",
+    "rollup-plugin-terser": "^7.0.0",
+    "tslib": "^1.11.0",
+    "typedoc": "0.20.36",
+    "typescript": "4.2.4"
+  },
+  "peerDependencies": {},
+  "dependencies": {
+    "three": "^0.131.3"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "target": "ES6",
+    "moduleResolution": "node",
+    "strict": true
+  },
+  "typedocOptions": {
+    "out": "docs",
+    "gitRevision": "master",
+    "entryPoints": ["src/index.ts"],
+    "includeVersion": true
+  },
+  "exclude": ["node_modules", "src/**/*.d.ts"]
+}
