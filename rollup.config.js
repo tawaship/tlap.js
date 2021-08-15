@@ -59,9 +59,9 @@ export default (async () => {
 			output: [
 				{
 					banner: banner,
-					file: 'dist/trap.js',
+					file: 'dist/tlap.js',
 					format: 'iife',
-					name: 'TRAP',
+					name: 'TLAP',
 					sourcemap: true,
 					extend: true,
 					globals: {
@@ -93,9 +93,9 @@ export default (async () => {
 			output: [
 				{
 					banner: banner,
-					file: 'dist/trap.min.js',
+					file: 'dist/tlap.min.js',
 					format: 'iife',
-					name: 'TRAP',
+					name: 'TLAP',
 					sourcemap: true,
 					extend: true,
 					globals: {

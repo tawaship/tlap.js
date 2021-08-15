@@ -1,9 +1,9 @@
 {
-  "name": "@tawaship/trap.js",
+  "name": "@tawaship/tlap.js",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/trap.js.cjs.js",
-  "module": "dist/trap.js.esm.js",
+  "main": "dist/tlap.js.cjs.js",
+  "module": "dist/tlap.js.esm.js",
   "types": "types/index.d.ts",
   "directories": {
     "doc": "docs",
@@ -23,14 +23,14 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tawaship/trap.js.git"
+    "url": "git+https://github.com/tawaship/tlap.js.git"
   },
   "author": "tawaship",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/tawaship/trap.js/issues"
+    "url": "https://github.com/tawaship/tlap.js/issues"
   },
-  "homepage": "https://tawaship.github.io/trap.js/",
+  "homepage": "https://tawaship.github.io/tlap.js/",
   "devDependencies": {
     "@rollup/plugin-buble": "^0.21.3",
     "@rollup/plugin-commonjs": "^11.0.2",

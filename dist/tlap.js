@@ -964,5 +964,5 @@
     exports.DisplayObject = DisplayObject, exports.Mesh = Mesh, exports.Object2D = Object2D, 
     exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, exports.PhysicsView = PhysicsView, 
     exports.Sprite = Sprite, exports.View = View;
-}(this.TRAP = this.TRAP || {}, THREE);
-//# sourceMappingURL=trap.js.map
+}(this.TLAP = this.TLAP || {}, THREE);
+//# sourceMappingURL=tlap.js.map
