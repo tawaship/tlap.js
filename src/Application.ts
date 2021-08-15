@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import isMobile from 'ismobilejs';
 import { View } from './View';
 import { DisplayObject, IInteractionEvent, ITickerData } from './DisplayObject';
+import { Content } from './Content';
+import { IDeliverData } from './IDeliverData';
 
 export interface IApplicationOption {
 	canvas?: HTMLCanvasElement;
@@ -13,6 +15,8 @@ export interface IApplicationOption {
 	backgroundColor?: number;
 	antialias?: boolean;
 	autoAdjust?: TAutoAdjust;
+	basepath?: string;
+	version?: string;
 }
 
 export interface IAdjustDelegate {
@@ -57,6 +61,8 @@ export class Application {
 	private _playing: boolean = false;
 	private _rendererSize: THREE.Vector2;
 	private _autoAdjuster: TAutoAdjuster = null;
+	private _basepath: string = '';
+	private _version: string = '';
 	
 	interactionDown: boolean = true;
 	interactionMove: boolean = false;
@@ -79,6 +85,8 @@ export class Application {
 		const backgroundColor = options.backgroundColor || 0;
 		const opacity = transparent ? 0 : 1;
 		const autoAdjust = options.autoAdjust || false;
+		const basepath = options.basepath || './';
+		const version = options.version || '';
 		
 		renderer.setClearColor(backgroundColor, 0);
 		renderer.setSize(width, height);
@@ -88,6 +96,8 @@ export class Application {
 		this._container = container;
 		this._renderer = renderer;
 		this._rendererSize = new THREE.Vector2(width, height);
+		this._basepath = basepath;
+		this._version = version;
 		
 		const dom = renderer.domElement;
 		dom.style.position = 'absolute';
@@ -293,6 +303,26 @@ export class Application {
 		}
 	}
 	
+	attachAsync(content: Content) {
+		return content.loadAssetsAsync(this._basepath, this._version)
+			.then(resources => {
+				return {
+					width: this._rendererSize.width,
+					height: this._rendererSize.height,
+					resources,
+					vars: content.vars
+				};
+			})
+			.then(($: IDeliverData) => {
+				const viewClasses = content.viewClasses;
+				for (let i = 0; i < viewClasses.length; i++) {
+					this.addView(new viewClasses[i]($));
+				}
+				
+				return this;
+			});
+	}
+	
 	get element() {
 		return this._renderer.domElement;
 	}
@@ -325,15 +355,19 @@ export class Application {
 	play() {
 		this._container.appendChild(this._renderer.domElement);
 		
-		this.start();
+		return this.start();
 	}
 	
 	start() {
 		this._playing = true;
+		
+		return this;
 	}
 	
 	stop() {
 		this._playing = false;
+		
+		return this;
 	}
 	
 	update(delta: number) {

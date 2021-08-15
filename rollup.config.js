@@ -7,7 +7,7 @@ import del from 'del';
 
 const conf = require('./package.json');
 const version = conf.version;
-const pixi = conf.devDependencies['three'];
+const three = conf.dependencies['three'];
 
 const banner = [
 	'/*!',
@@ -65,11 +65,12 @@ export default (async () => {
 					sourcemap: true,
 					extend: true,
 					globals: {
-						'three': 'THREE'
+						'three': 'THREE',
+						'three/examples/jsm/loaders/GLTFLoader': '{ GLTFLoader: THREE.GLTFLoader }'
 					}
 				}
 			],
-			external: ['three'],
+			external: ['three', 'three/examples/jsm/loaders/GLTFLoader'],
 			plugins: [
 				nodeResolve(),
 				commonjs(),
@@ -99,12 +100,13 @@ export default (async () => {
 					sourcemap: true,
 					extend: true,
 					globals: {
-						'three': 'THREE'
+						'three': 'THREE',
+						'three/examples/jsm/loaders/GLTFLoader': '{ GLTFLoader: THREE.GLTFLoader }'
 					},
 					compact: true
 				}
 			],
-			external: ['three'],
+			external: ['three', 'three/examples/jsm/loaders/GLTFLoader'],
 			plugins: [
 				nodeResolve(),
 				commonjs(),

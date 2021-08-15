@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import { Object3D } from './Object3D';
 import { Camera } from './Camera';
 import { IInteractionEvent, ITickerData } from './DisplayObject';
+import { IDeliverData } from './IDeliverData';
 
 export class View extends Object3D<THREE.Scene> {
 	private _cameras: Camera[] = [];
 	
-	constructor() {
+	constructor($?: IDeliverData) {
 		super(new THREE.Scene());
 		
 		this.interactive = true;

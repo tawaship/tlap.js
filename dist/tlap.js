@@ -1,28 +1,58 @@
 /*!
- * pixi-animate-container - v1.0.0
+ * tlap.js - v1.0.0
  * 
- * @require pixi.js vundefined
+ * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
  * @license MIT
  */
-!function(exports, THREE) {
+!function(exports, THREE, GLTFLoader) {
     "use strict";
+    var Anchor = function(x, y, z, mesh) {
+        this._x = x, this._y = y, this._z = z, this._mesh = mesh;
+    }, prototypeAccessors = {
+        x: {
+            configurable: !0
+        },
+        y: {
+            configurable: !0
+        },
+        z: {
+            configurable: !0
+        }
+    };
+    prototypeAccessors.x.get = function() {
+        return this._x;
+    }, prototypeAccessors.x.set = function(value) {
+        this._x = value, this._mesh.updateGeometryPosition();
+    }, prototypeAccessors.y.get = function() {
+        return this._y;
+    }, prototypeAccessors.y.set = function(value) {
+        this._y = value, this._mesh.updateGeometryPosition();
+    }, prototypeAccessors.z.get = function() {
+        return this._z;
+    }, prototypeAccessors.z.set = function(value) {
+        this._z = value, this._mesh.updateGeometryPosition();
+    }, Anchor.prototype.set = function(x, y, z) {
+        void 0 === y && (y = x), void 0 === z && (z = y), this._x = x, this._y = y, this._z = z, 
+        this._mesh.updateGeometryPosition();
+    }, Object.defineProperties(Anchor.prototype, prototypeAccessors);
     var appleIphone = /iPhone/i, appleIpod = /iPod/i, appleTablet = /iPad/i, appleUniversal = /\biOS-universal(?:.+)Mac\b/i, androidPhone = /\bAndroid(?:.+)Mobile\b/i, androidTablet = /Android/i, amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i, amazonTablet = /Silk/i, windowsPhone = /Windows Phone/i, windowsTablet = /\bWindows(?:.+)ARM\b/i, otherBlackBerry = /BlackBerry/i, otherBlackBerry10 = /BB10/i, otherOpera = /Opera Mini/i, otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i, otherFirefox = /Mobile(?:.+)Firefox\b/i, isAppleTabletOnIos13 = function(navigator) {
         return void 0 !== navigator && "MacIntel" === navigator.platform && "number" == typeof navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && "undefined" == typeof MSStream;
     };
     var Application = function(options) {
         var this$1 = this;
         void 0 === options && (options = {}), this._views = [], this._lastTime = 0, this._playing = !1, 
-        this._autoAdjuster = null, this.interactionDown = !0, this.interactionMove = !1, 
-        this.interactionUp = !0;
+        this._autoAdjuster = null, this._basepath = "", this._version = "", this.interactionDown = !0, 
+        this.interactionMove = !1, this.interactionUp = !0;
         var canvas = options.canvas || void 0, container = options.container || document.body, rendererOptions = {
             canvas: canvas,
             alpha: options.transparent || !1,
             antialias: options.antialias || !1
-        }, renderer = new THREE.WebGLRenderer(rendererOptions), width = options.width || 600, height = options.height || 400, resolution = options.resolution || 1, backgroundColor = options.backgroundColor || 0, autoAdjust = options.autoAdjust || !1;
+        }, renderer = new THREE.WebGLRenderer(rendererOptions), width = options.width || 600, height = options.height || 400, resolution = options.resolution || 1, backgroundColor = options.backgroundColor || 0, autoAdjust = options.autoAdjust || !1, basepath = options.basepath || "./", version = options.version || "";
         renderer.setClearColor(backgroundColor, 0), renderer.setSize(width, height), renderer.setPixelRatio(resolution), 
         renderer.autoClear = !1, this._container = container, this._renderer = renderer, 
-        this._rendererSize = new THREE.Vector2(width, height);
+        this._rendererSize = new THREE.Vector2(width, height), this._basepath = basepath, 
+        this._version = version;
         var dom = renderer.domElement;
         dom.style.position = "absolute";
         var isSP = function(param) {
@@ -168,7 +198,7 @@
         } : function() {
             autoAdjust(this$1);
         });
-    }, prototypeAccessors = {
+    }, prototypeAccessors$1 = {
         element: {
             configurable: !0
         },
@@ -182,11 +212,26 @@
             configurable: !0
         }
     };
-    prototypeAccessors.element.get = function() {
+    Application.prototype.attachAsync = function(content) {
+        var this$1 = this;
+        return content.loadAssetsAsync(this._basepath, this._version).then((function(resources) {
+            return {
+                width: this$1._rendererSize.width,
+                height: this$1._rendererSize.height,
+                resources: resources,
+                vars: content.vars
+            };
+        })).then((function($) {
+            for (var viewClasses = content.viewClasses, i = 0; i < viewClasses.length; i++) {
+                this$1.addView(new viewClasses[i]($));
+            }
+            return this$1;
+        }));
+    }, prototypeAccessors$1.element.get = function() {
         return this._renderer.domElement;
-    }, prototypeAccessors.width.get = function() {
+    }, prototypeAccessors$1.width.get = function() {
         return this._rendererSize.x;
-    }, prototypeAccessors.height.get = function() {
+    }, prototypeAccessors$1.height.get = function() {
         return this._rendererSize.y;
     }, Application.prototype.addView = function(view) {
         return this._views.push(view), view;
@@ -196,11 +241,11 @@
             return this._views.splice(index, 1), view;
         }
     }, Application.prototype.play = function() {
-        this._container.appendChild(this._renderer.domElement), this.start();
+        return this._container.appendChild(this._renderer.domElement), this.start();
     }, Application.prototype.start = function() {
-        this._playing = !0;
+        return this._playing = !0, this;
     }, Application.prototype.stop = function() {
-        this._playing = !1;
+        return this._playing = !1, this;
     }, Application.prototype.update = function(delta) {
         for (var c = this._views, e = {
             delta: delta
@@ -213,9 +258,9 @@
         for (var c = this._views, i = 0; i < c.length; i++) {
             c[i].render(this._renderer);
         }
-    }, prototypeAccessors.autoAdjuster.get = function() {
+    }, prototypeAccessors$1.autoAdjuster.get = function() {
         return this._autoAdjuster;
-    }, prototypeAccessors.autoAdjuster.set = function(autoAdjuster) {
+    }, prototypeAccessors$1.autoAdjuster.set = function(autoAdjuster) {
         this._autoAdjuster && window.removeEventListener("resize", this._autoAdjuster), 
         autoAdjuster ? (this._autoAdjuster = autoAdjuster, window.addEventListener("resize", autoAdjuster), 
         autoAdjuster()) : this._autoAdjuster = null;
@@ -280,7 +325,75 @@
             width: parseInt(view.style.width.replace("px", "")),
             height: parseInt(view.style.height.replace("px", ""))
         };
-    }, Object.defineProperties(Application.prototype, prototypeAccessors);
+    }, Object.defineProperties(Application.prototype, prototypeAccessors$1);
+    var BodyPosition = function(object) {
+        this._object = object;
+    }, prototypeAccessors$2 = {
+        x: {
+            configurable: !0
+        },
+        y: {
+            configurable: !0
+        },
+        z: {
+            configurable: !0
+        }
+    };
+    prototypeAccessors$2.x.get = function() {
+        return this._object.body.getPosition().x;
+    }, prototypeAccessors$2.x.set = function(value) {
+        var position = this._object.body.getPosition();
+        position.x = value, this._object.body.setPosition(position), this._object.updateTransform();
+    }, prototypeAccessors$2.y.get = function() {
+        return this._object.body.getPosition().y;
+    }, prototypeAccessors$2.y.set = function(value) {
+        var position = this._object.body.getPosition();
+        position.y = value, this._object.body.setPosition(position), this._object.updateTransform();
+    }, prototypeAccessors$2.z.get = function() {
+        return this._object.body.getPosition().z;
+    }, prototypeAccessors$2.z.set = function(value) {
+        var position = this._object.body.getPosition();
+        position.z = value, this._object.body.setPosition(position), this._object.updateTransform();
+    }, BodyPosition.prototype.set = function(x, y, z) {
+        void 0 === y && (y = x), void 0 === z && (z = y);
+        var position = this._object.body.getPosition();
+        position.x = x, position.y = y, position.z = z, this._object.body.setPosition(position), 
+        this._object.updateTransform();
+    }, Object.defineProperties(BodyPosition.prototype, prototypeAccessors$2);
+    var BodyRotation = function(object) {
+        this._object = object;
+    }, prototypeAccessors$3 = {
+        x: {
+            configurable: !0
+        },
+        y: {
+            configurable: !0
+        },
+        z: {
+            configurable: !0
+        }
+    };
+    prototypeAccessors$3.x.get = function() {
+        return this._object.body.getRotation().toEulerXyz().x;
+    }, prototypeAccessors$3.x.set = function(value) {
+        var rotation = this._object.body.getRotation().toEulerXyz();
+        rotation.x = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
+    }, prototypeAccessors$3.y.get = function() {
+        return this._object.body.getRotation().toEulerXyz().y;
+    }, prototypeAccessors$3.y.set = function(value) {
+        var rotation = this._object.body.getRotation().toEulerXyz();
+        rotation.y = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
+    }, prototypeAccessors$3.z.get = function() {
+        return this._object.body.getRotation().toEulerXyz().z;
+    }, prototypeAccessors$3.z.set = function(value) {
+        var rotation = this._object.body.getRotation().toEulerXyz();
+        rotation.z = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
+    }, BodyRotation.prototype.set = function(x, y, z) {
+        void 0 === y && (y = x), void 0 === z && (z = y);
+        var rotation = this._object.body.getRotation().toEulerXyz();
+        rotation.x = x, rotation.y = y, rotation.z = z, this._object.body.setRotationXyz(rotation), 
+        this._object.updateTransform();
+    }, Object.defineProperties(BodyRotation.prototype, prototypeAccessors$3);
     /*!
      * @tawaship/emitter - v3.1.1
      * 
@@ -388,7 +501,7 @@
             callbacks: [],
             value: null
         }, this.add(callbacks);
-    }, prototypeAccessors$1 = {
+    }, prototypeAccessors$4 = {
         enabled: {
             configurable: !0
         },
@@ -396,9 +509,9 @@
             configurable: !0
         }
     };
-    prototypeAccessors$1.enabled.get = function() {
+    prototypeAccessors$4.enabled.get = function() {
         return this._taskData.enabled;
-    }, prototypeAccessors$1.enabled.set = function(enabled) {
+    }, prototypeAccessors$4.enabled.set = function(enabled) {
         this._taskData.enabled = enabled;
     }, Task.prototype.add = function(callbacks) {
         Array.isArray(callbacks) || (callbacks = [ callbacks ]);
@@ -433,9 +546,9 @@
         this;
     }, Task.prototype.destroy = function() {
         this.reset();
-    }, prototypeAccessors$1.value.get = function() {
+    }, prototypeAccessors$4.value.get = function() {
         return this._taskData.value;
-    }, Object.defineProperties(Task.prototype, prototypeAccessors$1);
+    }, Object.defineProperties(Task.prototype, prototypeAccessors$4);
     var _box = new THREE.Box3, DisplayObject = function(Emitter) {
         function DisplayObject(three) {
             var this$1 = this;
@@ -542,7 +655,44 @@
                 }
             }
         }, Object.defineProperties(DisplayObject.prototype, prototypeAccessors), DisplayObject;
-    }(Emitter), Object2D = function(DisplayObject) {
+    }(Emitter), Object3D = function(DisplayObject) {
+        function Object3D() {
+            DisplayObject.apply(this, arguments);
+        }
+        DisplayObject && (Object3D.__proto__ = DisplayObject), Object3D.prototype = Object.create(DisplayObject && DisplayObject.prototype), 
+        Object3D.prototype.constructor = Object3D;
+        var prototypeAccessors = {
+            rotation: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.rotation.get = function() {
+            return this._three.rotation;
+        }, Object.defineProperties(Object3D.prototype, prototypeAccessors), Object3D;
+    }(DisplayObject), Camera = function(Object3D) {
+        function Camera(camera, viewport) {
+            Object3D.call(this, camera), this._viewport = viewport;
+        }
+        Object3D && (Camera.__proto__ = Object3D), Camera.prototype = Object.create(Object3D && Object3D.prototype), 
+        Camera.prototype.constructor = Camera;
+        var prototypeAccessors = {
+            camera: {
+                configurable: !0
+            },
+            viewport: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.camera.get = function() {
+            return this._three;
+        }, prototypeAccessors.viewport.get = function() {
+            return this._viewport;
+        }, Camera.prototype.render = function(renderer, scene) {
+            renderer.setViewport(this._viewport.x, this._viewport.y, this._viewport.width, this._viewport.height), 
+            renderer.render(scene, this._three);
+        }, Camera.prototype.updateTransform = function() {}, Camera.prototype.updateBoundingBox = function() {}, 
+        Object.defineProperties(Camera.prototype, prototypeAccessors), Camera;
+    }(Object3D), Object2D = function(DisplayObject) {
         function Object2D(three) {
             DisplayObject.call(this, three), this._skew = new THREE.Vector2, three.matrixAutoUpdate = !1;
         }
@@ -568,20 +718,6 @@
             var x = this.x, y = this.y, z = this._three.position.z, scaleX = this.scale.x, scaleY = this.scale.y, skewX = this.skew.x, skewY = this.skew.y, rotation = this.rotation, pivotX = this.pivot.x, pivotY = this.pivot.y, a = Math.cos(rotation + skewY) * scaleX, b = Math.sin(rotation + skewY) * scaleX, c = -Math.sin(rotation - skewX) * scaleY, d = Math.cos(rotation - skewX) * scaleY, tx = x - (pivotX * a + pivotY * c), ty = y - (pivotX * b + pivotY * d);
             this._three.matrix.set(a, c, 0, tx, b, d, 0, ty, 0, 0, 1, z, 0, 0, 0, 1);
         }, Object.defineProperties(Object2D.prototype, prototypeAccessors), Object2D;
-    }(DisplayObject), Object3D = function(DisplayObject) {
-        function Object3D() {
-            DisplayObject.apply(this, arguments);
-        }
-        DisplayObject && (Object3D.__proto__ = DisplayObject), Object3D.prototype = Object.create(DisplayObject && DisplayObject.prototype), 
-        Object3D.prototype.constructor = Object3D;
-        var prototypeAccessors = {
-            rotation: {
-                configurable: !0
-            }
-        };
-        return prototypeAccessors.rotation.get = function() {
-            return this._three.rotation;
-        }, Object.defineProperties(Object3D.prototype, prototypeAccessors), Object3D;
     }(DisplayObject), Container2D = function(Object2D) {
         function Container2D() {
             Object2D.call(this, new THREE.Group), this._sub = new THREE.Group, this._three.add(this._sub);
@@ -602,171 +738,115 @@
         Container3D.prototype.constructor = Container3D, Container3D.prototype.updateTransform = function() {
             this._sub.position.x = -this._pivot.x, this._sub.position.y = -this._pivot.y, this._sub.position.z = -this._pivot.z;
         }, Container3D;
-    }(Object3D), View = function(Object3D) {
-        function View() {
-            Object3D.call(this, new THREE.Scene), this._cameras = [], this.interactive = !0;
-        }
-        Object3D && (View.__proto__ = Object3D), View.prototype = Object.create(Object3D && Object3D.prototype), 
-        View.prototype.constructor = View;
-        var prototypeAccessors = {
-            scene: {
-                configurable: !0
-            }
+    }(Object3D);
+    function resolvePath(path, basepath) {
+        return 0 === path.indexOf("http://") || 0 === path.indexOf("https://") || 0 === path.indexOf("//") || 0 === path.indexOf("/") ? path : basepath.replace(/^(.+)\/$/, "$1") + "/" + path;
+    }
+    function resolveVersion(url, version) {
+        return version ? url + (url.match(/\?/) ? "&" : "?") + "_fv=" + version : url;
+    }
+    function loadTexturesAsync(data, basepath, version) {
+        var loader = new THREE.TextureLoader, promises = [], textures = {}, loop = function(i) {
+            promises.push(new Promise((function(resolve, reject) {
+                var url = resolveVersion(resolvePath(data[i], basepath), version);
+                loader.load(url, (function(texture) {
+                    textures[i] = texture, resolve();
+                }), void 0, (function(e) {
+                    reject(e);
+                }));
+            })));
         };
-        return prototypeAccessors.scene.get = function() {
-            return this._three;
-        }, View.prototype.addCamera = function(camera) {
-            return camera.parent && camera.parent.removeChild(camera), this._cameras.push(camera), 
-            this._three.add(camera.three), camera.three.userData.parent = this, camera;
-        }, View.prototype.removeCamera = function(camera) {
-            if (camera.parent === this) {
-                var index = this._cameras.indexOf(camera);
-                if (-1 !== index) {
-                    return this._cameras.splice(index, 1), this._three.remove(camera.three), camera.three.userData.parent = null, 
-                    camera;
-                }
-            }
-        }, View.prototype.add = function(three) {
-            return this._three.add(three), three;
-        }, View.prototype.remove = function(three) {
-            return this._three.remove(three), three;
-        }, View.prototype.update = function(e) {
-            this.updateTask(e);
-            var c = this._children;
-            for (var i in this._children) {
-                c[i].update(e);
-            }
-        }, View.prototype.render = function(renderer) {
-            for (var c = this._cameras, i = 0; i < c.length; i++) {
-                renderer.clearDepth(), c[i].render(renderer, this._three);
-            }
-        }, View.prototype.onInteraction = function(event, raycaster, mouse) {
-            var this$1 = this;
-            if (this.interactive) {
-                for (var c = this._cameras, loop = function(i) {
-                    if (event.emitted.length > 0) {
-                        return {};
-                    }
-                    raycaster.setFromCamera(mouse, c[i].camera);
-                    for (var f = function(p) {
-                        return p.children.map((function(p) {
-                            return p instanceof THREE.Mesh ? p : f(p);
-                        })).flat();
-                    }, meshes = f(this$1._three), intersects = raycaster.intersectObjects(meshes), i$1 = 0; i$1 < intersects.length; i$1++) {
-                        if (event.emitted.length > 0) {
-                            return;
-                        }
-                        for (var p = intersects[i$1].object; p !== this$1._three && (p.dispatchEvent(event), 
-                        p.parent); ) {
-                            p = p.parent;
-                        }
-                    }
-                }, i = 0; i < c.length; i++) {
-                    var returned = loop(i);
-                    if (returned) {
-                        return returned.v;
-                    }
-                }
-            }
-        }, View.prototype.updateTransform = function() {}, Object.defineProperties(View.prototype, prototypeAccessors), 
-        View;
-    }(Object3D), OIMO$1 = OIMO, PhysicsView = function(View) {
-        function PhysicsView() {
-            View.call(this), this.physicsEnabled = !0, this._world = new OIMO$1.World, this._world.setGravity(new OIMO$1.Vec3(0, -9.8, 0));
+        for (var i in data) {
+            loop(i);
         }
-        View && (PhysicsView.__proto__ = View), PhysicsView.prototype = Object.create(View && View.prototype), 
-        PhysicsView.prototype.constructor = PhysicsView;
-        var prototypeAccessors = {
-            world: {
-                configurable: !0
-            }
+        return Promise.all(promises).then((function() {
+            return textures;
+        }));
+    }
+    function loadGLTFsAsync(data, basepath, version) {
+        var loader = new GLTFLoader.GLTFLoader, promises = [], models = {}, loop = function(i) {
+            promises.push(new Promise((function(resolve, reject) {
+                var url = resolveVersion(resolvePath(data[i], basepath), version);
+                loader.load(url, (function(model) {
+                    models[i] = model, resolve();
+                }), void 0, (function(e) {
+                    reject(e);
+                }));
+            })));
         };
-        return prototypeAccessors.world.get = function() {
-            return this._world;
-        }, PhysicsView.prototype.addChild = function(object) {
-            return View.prototype.addChild.call(this, object), this._world.addRigidBody(object.body), 
-            object;
-        }, PhysicsView.prototype.removeChild = function(object) {
-            var o = View.prototype.removeChild.call(this, object);
-            if (o) {
-                return this._world.removeRigidBody(object.body), o;
-            }
-        }, PhysicsView.prototype.update = function(e) {
-            this.physicsEnabled && this._world.step(1 / 60), this.updateTask(e);
-            var c = this._children;
-            for (var i in this._children) {
-                c[i].update(e);
-            }
-        }, Object.defineProperties(PhysicsView.prototype, prototypeAccessors), PhysicsView;
-    }(View), BodyPosition = function(object) {
-        this._object = object;
-    }, prototypeAccessors$2 = {
-        x: {
+        for (var i in data) {
+            loop(i);
+        }
+        return Promise.all(promises).then((function() {
+            return models;
+        }));
+    }
+    var _assetLoaders = {}, Content = function() {
+        this._assetDefines = {}, this._viewClasses = [], this._vars = {};
+    }, prototypeAccessors$5 = {
+        viewClasses: {
             configurable: !0
         },
-        y: {
-            configurable: !0
-        },
-        z: {
+        vars: {
             configurable: !0
         }
     };
-    prototypeAccessors$2.x.get = function() {
-        return this._object.body.getPosition().x;
-    }, prototypeAccessors$2.x.set = function(value) {
-        var position = this._object.body.getPosition();
-        position.x = value, this._object.body.setPosition(position), this._object.updateTransform();
-    }, prototypeAccessors$2.y.get = function() {
-        return this._object.body.getPosition().y;
-    }, prototypeAccessors$2.y.set = function(value) {
-        var position = this._object.body.getPosition();
-        position.y = value, this._object.body.setPosition(position), this._object.updateTransform();
-    }, prototypeAccessors$2.z.get = function() {
-        return this._object.body.getPosition().z;
-    }, prototypeAccessors$2.z.set = function(value) {
-        var position = this._object.body.getPosition();
-        position.z = value, this._object.body.setPosition(position), this._object.updateTransform();
-    }, BodyPosition.prototype.set = function(x, y, z) {
-        void 0 === y && (y = x), void 0 === z && (z = y);
-        var position = this._object.body.getPosition();
-        position.x = x, position.y = y, position.z = z, this._object.body.setPosition(position), 
-        this._object.updateTransform();
-    }, Object.defineProperties(BodyPosition.prototype, prototypeAccessors$2);
-    var BodyRotation = function(object) {
-        this._object = object;
-    }, prototypeAccessors$3 = {
-        x: {
-            configurable: !0
-        },
-        y: {
-            configurable: !0
-        },
-        z: {
-            configurable: !0
+    prototypeAccessors$5.viewClasses.get = function() {
+        return this._viewClasses;
+    }, prototypeAccessors$5.vars.get = function() {
+        return Object.assign({}, this._vars);
+    }, Content.prototype.defineAssets = function(key, data) {
+        for (var i in this._assetDefines[key] = this._assetDefines[key] || {}, data) {
+            this._assetDefines[key][i] = data[i];
         }
-    };
-    prototypeAccessors$3.x.get = function() {
-        return this._object.body.getRotation().toEulerXyz().x;
-    }, prototypeAccessors$3.x.set = function(value) {
-        var rotation = this._object.body.getRotation().toEulerXyz();
-        rotation.x = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
-    }, prototypeAccessors$3.y.get = function() {
-        return this._object.body.getRotation().toEulerXyz().y;
-    }, prototypeAccessors$3.y.set = function(value) {
-        var rotation = this._object.body.getRotation().toEulerXyz();
-        rotation.y = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
-    }, prototypeAccessors$3.z.get = function() {
-        return this._object.body.getRotation().toEulerXyz().z;
-    }, prototypeAccessors$3.z.set = function(value) {
-        var rotation = this._object.body.getRotation().toEulerXyz();
-        rotation.z = value, this._object.body.setRotationXyz(rotation), this._object.updateTransform();
-    }, BodyRotation.prototype.set = function(x, y, z) {
-        void 0 === y && (y = x), void 0 === z && (z = y);
-        var rotation = this._object.body.getRotation().toEulerXyz();
-        rotation.x = x, rotation.y = y, rotation.z = z, this._object.body.setRotationXyz(rotation), 
-        this._object.updateTransform();
-    }, Object.defineProperties(BodyRotation.prototype, prototypeAccessors$3);
-    var PhysicsObject3D = function(Object3D) {
+    }, Content.prototype.defineTextures = function(data) {
+        this.defineAssets("textures", data);
+    }, Content.prototype.defineGLBs = function(data) {
+        this.defineAssets("glbs", data);
+    }, Content.prototype.loadAssetsAsync = function(basepath, version) {
+        var this$1 = this, promises = [], resources = {}, loop = function(i) {
+            i in _assetLoaders && promises.push(_assetLoaders[i](this$1._assetDefines[i], basepath, version).then((function(assets) {
+                return resources[i] = assets;
+            })));
+        };
+        for (var i in this$1._assetDefines) {
+            loop(i);
+        }
+        return Promise.all(promises).then((function() {
+            return resources;
+        }));
+    }, Content.prototype.setView = function(viewClass) {
+        this._viewClasses.push(viewClass);
+    }, Content.prototype.addVars = function(data) {
+        for (var i in data) {
+            this._vars[i] = data[i];
+        }
+    }, Content.registerLoader = function(key, delegate) {
+        _assetLoaders[key] = delegate;
+    }, Object.defineProperties(Content.prototype, prototypeAccessors$5), Content.registerLoader("textures", loadTexturesAsync), 
+    Content.registerLoader("glbs", loadGLTFsAsync);
+    var Mesh = function(Object3D) {
+        function Mesh(geometry, material) {
+            Object3D.call(this, new THREE.Mesh(geometry, material)), this._anchor = new Anchor(0, 0, 0, this), 
+            material.transparent = !0, this.updateGeometryPosition();
+        }
+        Object3D && (Mesh.__proto__ = Object3D), Mesh.prototype = Object.create(Object3D && Object3D.prototype), 
+        Mesh.prototype.constructor = Mesh;
+        var prototypeAccessors = {
+            anchor: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.anchor.get = function() {
+            return this._anchor;
+        }, Mesh.prototype.updateGeometryPosition = function() {
+            this._three.geometry.center(), this.updateBoundingBox(), this._three.geometry.translate(this._size.x * (.5 - this._anchor.x), this._size.y * (.5 - this._anchor.y), this._size.z * (.5 - this._anchor.z));
+        }, Mesh.prototype.updateBoundingBox = function() {
+            this._three.geometry.computeBoundingBox(), this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size), 
+            this._size.multiply(this.scale);
+        }, Mesh.prototype.updateTransform = function() {}, Object.defineProperties(Mesh.prototype, prototypeAccessors), 
+        Mesh;
+    }(Object3D), OIMO$1 = OIMO, PhysicsObject3D = function(Object3D) {
         function PhysicsObject3D(three, body) {
             Object3D.call(this, three), this._contantEnabled = !1, this._body = body, this._position = new BodyPosition(this), 
             this._rotation = new BodyRotation(this), body.userData = {}, body.userData.ref = this;
@@ -848,36 +928,103 @@
             this._three.position.copy(this._body.getPosition()), this._three.quaternion.copy(this._body.getOrientation());
         }, PhysicsObject3D.prototype.updateBoundingBox = function() {}, Object.defineProperties(PhysicsObject3D.prototype, prototypeAccessors), 
         PhysicsObject3D;
-    }(Object3D), Anchor = function(x, y, z, mesh) {
-        this._x = x, this._y = y, this._z = z, this._mesh = mesh;
-    }, prototypeAccessors$4 = {
-        x: {
-            configurable: !0
-        },
-        y: {
-            configurable: !0
-        },
-        z: {
-            configurable: !0
+    }(Object3D), View = function(Object3D) {
+        function View($) {
+            Object3D.call(this, new THREE.Scene), this._cameras = [], this.interactive = !0;
         }
-    };
-    prototypeAccessors$4.x.get = function() {
-        return this._x;
-    }, prototypeAccessors$4.x.set = function(value) {
-        this._x = value, this._mesh.updateGeometryPosition();
-    }, prototypeAccessors$4.y.get = function() {
-        return this._y;
-    }, prototypeAccessors$4.y.set = function(value) {
-        this._y = value, this._mesh.updateGeometryPosition();
-    }, prototypeAccessors$4.z.get = function() {
-        return this._z;
-    }, prototypeAccessors$4.z.set = function(value) {
-        this._z = value, this._mesh.updateGeometryPosition();
-    }, Anchor.prototype.set = function(x, y, z) {
-        void 0 === y && (y = x), void 0 === z && (z = y), this._x = x, this._y = y, this._z = z, 
-        this._mesh.updateGeometryPosition();
-    }, Object.defineProperties(Anchor.prototype, prototypeAccessors$4);
-    var Sprite = function(Object2D) {
+        Object3D && (View.__proto__ = Object3D), View.prototype = Object.create(Object3D && Object3D.prototype), 
+        View.prototype.constructor = View;
+        var prototypeAccessors = {
+            scene: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.scene.get = function() {
+            return this._three;
+        }, View.prototype.addCamera = function(camera) {
+            return camera.parent && camera.parent.removeChild(camera), this._cameras.push(camera), 
+            this._three.add(camera.three), camera.three.userData.parent = this, camera;
+        }, View.prototype.removeCamera = function(camera) {
+            if (camera.parent === this) {
+                var index = this._cameras.indexOf(camera);
+                if (-1 !== index) {
+                    return this._cameras.splice(index, 1), this._three.remove(camera.three), camera.three.userData.parent = null, 
+                    camera;
+                }
+            }
+        }, View.prototype.add = function(three) {
+            return this._three.add(three), three;
+        }, View.prototype.remove = function(three) {
+            return this._three.remove(three), three;
+        }, View.prototype.update = function(e) {
+            this.updateTask(e);
+            var c = this._children;
+            for (var i in this._children) {
+                c[i].update(e);
+            }
+        }, View.prototype.render = function(renderer) {
+            for (var c = this._cameras, i = 0; i < c.length; i++) {
+                renderer.clearDepth(), c[i].render(renderer, this._three);
+            }
+        }, View.prototype.onInteraction = function(event, raycaster, mouse) {
+            var this$1 = this;
+            if (this.interactive) {
+                for (var c = this._cameras, loop = function(i) {
+                    if (event.emitted.length > 0) {
+                        return {};
+                    }
+                    raycaster.setFromCamera(mouse, c[i].camera);
+                    for (var f = function(p) {
+                        return p.children.map((function(p) {
+                            return p instanceof THREE.Mesh ? p : f(p);
+                        })).flat();
+                    }, meshes = f(this$1._three), intersects = raycaster.intersectObjects(meshes), i$1 = 0; i$1 < intersects.length; i$1++) {
+                        if (event.emitted.length > 0) {
+                            return;
+                        }
+                        for (var p = intersects[i$1].object; p !== this$1._three && (p.dispatchEvent(event), 
+                        p.parent); ) {
+                            p = p.parent;
+                        }
+                    }
+                }, i = 0; i < c.length; i++) {
+                    var returned = loop(i);
+                    if (returned) {
+                        return returned.v;
+                    }
+                }
+            }
+        }, View.prototype.updateTransform = function() {}, Object.defineProperties(View.prototype, prototypeAccessors), 
+        View;
+    }(Object3D), PhysicsView = function(View) {
+        function PhysicsView() {
+            View.call(this), this.physicsEnabled = !0, this._world = new OIMO$1.World, this._world.setGravity(new OIMO$1.Vec3(0, -9.8, 0));
+        }
+        View && (PhysicsView.__proto__ = View), PhysicsView.prototype = Object.create(View && View.prototype), 
+        PhysicsView.prototype.constructor = PhysicsView;
+        var prototypeAccessors = {
+            world: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.world.get = function() {
+            return this._world;
+        }, PhysicsView.prototype.addChild = function(object) {
+            return View.prototype.addChild.call(this, object), this._world.addRigidBody(object.body), 
+            object;
+        }, PhysicsView.prototype.removeChild = function(object) {
+            var o = View.prototype.removeChild.call(this, object);
+            if (o) {
+                return this._world.removeRigidBody(object.body), o;
+            }
+        }, PhysicsView.prototype.update = function(e) {
+            this.physicsEnabled && this._world.step(1 / 60), this.updateTask(e);
+            var c = this._children;
+            for (var i in this._children) {
+                c[i].update(e);
+            }
+        }, Object.defineProperties(PhysicsView.prototype, prototypeAccessors), PhysicsView;
+    }(View), Sprite = function(Object2D) {
         function Sprite(texture) {
             Object2D.call(this, new THREE.Mesh), this._width = 0, this._height = 0, this._anchor = new Anchor(0, 0, 0, this), 
             this._material = new THREE.MeshBasicMaterial, this._material.transparent = !0, this._three.material = this._material, 
@@ -914,55 +1061,15 @@
             })));
             return sprite;
         }, Object.defineProperties(Sprite.prototype, prototypeAccessors), Sprite;
-    }(Object2D), Mesh = function(Object3D) {
-        function Mesh(geometry, material) {
-            Object3D.call(this, new THREE.Mesh(geometry, material)), this._anchor = new Anchor(0, 0, 0, this), 
-            material.transparent = !0, this.updateGeometryPosition();
-        }
-        Object3D && (Mesh.__proto__ = Object3D), Mesh.prototype = Object.create(Object3D && Object3D.prototype), 
-        Mesh.prototype.constructor = Mesh;
-        var prototypeAccessors = {
-            anchor: {
-                configurable: !0
-            }
-        };
-        return prototypeAccessors.anchor.get = function() {
-            return this._anchor;
-        }, Mesh.prototype.updateGeometryPosition = function() {
-            this._three.geometry.center(), this.updateBoundingBox(), this._three.geometry.translate(this._size.x * (.5 - this._anchor.x), this._size.y * (.5 - this._anchor.y), this._size.z * (.5 - this._anchor.z));
-        }, Mesh.prototype.updateBoundingBox = function() {
-            this._three.geometry.computeBoundingBox(), this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size), 
-            this._size.multiply(this.scale);
-        }, Mesh.prototype.updateTransform = function() {}, Object.defineProperties(Mesh.prototype, prototypeAccessors), 
-        Mesh;
-    }(Object3D), Camera = function(Object3D) {
-        function Camera(camera, viewport) {
-            Object3D.call(this, camera), this._viewport = viewport;
-        }
-        Object3D && (Camera.__proto__ = Object3D), Camera.prototype = Object.create(Object3D && Object3D.prototype), 
-        Camera.prototype.constructor = Camera;
-        var prototypeAccessors = {
-            camera: {
-                configurable: !0
-            },
-            viewport: {
-                configurable: !0
-            }
-        };
-        return prototypeAccessors.camera.get = function() {
-            return this._three;
-        }, prototypeAccessors.viewport.get = function() {
-            return this._viewport;
-        }, Camera.prototype.render = function(renderer, scene) {
-            renderer.setViewport(this._viewport.x, this._viewport.y, this._viewport.width, this._viewport.height), 
-            renderer.render(scene, this._three);
-        }, Camera.prototype.updateTransform = function() {}, Camera.prototype.updateBoundingBox = function() {}, 
-        Object.defineProperties(Camera.prototype, prototypeAccessors), Camera;
-    }(Object3D);
-    exports.Anchor = Anchor, exports.Application = Application, exports.BodyRotation = BodyRotation, 
-    exports.Camera = Camera, exports.Container2D = Container2D, exports.Container3D = Container3D, 
-    exports.DisplayObject = DisplayObject, exports.Mesh = Mesh, exports.Object2D = Object2D, 
-    exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, exports.PhysicsView = PhysicsView, 
-    exports.Sprite = Sprite, exports.View = View;
-}(this.TLAP = this.TLAP || {}, THREE);
+    }(Object2D);
+    exports.Anchor = Anchor, exports.Application = Application, exports.BodyPosition = BodyPosition, 
+    exports.BodyRotation = BodyRotation, exports.Camera = Camera, exports.Container2D = Container2D, 
+    exports.Container3D = Container3D, exports.Content = Content, exports.DisplayObject = DisplayObject, 
+    exports.Mesh = Mesh, exports.Object2D = Object2D, exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, 
+    exports.PhysicsView = PhysicsView, exports.Sprite = Sprite, exports.View = View, 
+    exports.loadGLTFsAsync = loadGLTFsAsync, exports.loadTexturesAsync = loadTexturesAsync, 
+    exports.resolvePath = resolvePath, exports.resolveVersion = resolveVersion;
+}(this.TLAP = this.TLAP || {}, THREE, {
+    GLTFLoader: THREE.GLTFLoader
+});
 //# sourceMappingURL=tlap.js.map
