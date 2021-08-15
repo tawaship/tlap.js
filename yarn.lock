@@ -373,10 +373,10 @@
   dependencies:
     "@types/node" "*"
 
-"@types/three@^0.131.0":
-  version "0.131.0"
-  resolved "https://registry.yarnpkg.com/@types/three/-/three-0.131.0.tgz#98f59887b05f71e665cf2fbdf04e0e4ceb9f89b6"
-  integrity sha512-4VCtsDi6mIId96GcGKG91e2Y6VwU2T0u/YB7vCFJh1kXik93arxn7l9tVZHo1LXOtgCJJDdC+e1fwf2Vu/4ySw==
+"@types/three@0.127.0":
+  version "0.127.0"
+  resolved "https://registry.yarnpkg.com/@types/three/-/three-0.127.0.tgz#6d2bf6d7c14d4c4dc399a0e355085f27e996ac89"
+  integrity sha512-4Q33L6PzzxCXm0VdUv4x1/4VBnwWgCS7Ui6WpRh88GVIUUYsg5qU2GVzva14hDJbtfyNBxey7UcdInR4RkKPeQ==
 
 acorn-dynamic-import@^4.0.0:
   version "4.0.0"
@@ -2459,10 +2459,10 @@ test-exclude@^6.0.0:
     glob "^7.1.4"
     minimatch "^3.0.4"
 
-three@^0.131.3:
-  version "0.131.3"
-  resolved "https://registry.yarnpkg.com/three/-/three-0.131.3.tgz#406fd210c603ca9154937ae3582996fbfd3cb716"
-  integrity sha512-VkZAv8ZTJqiE/fyEmoWLxcNHImpVcjqW7RO0GzMu3tRpwO0KUvK9pjTmJzJcAbc51BOeB2G38zh80yjHTbP8gQ==
+three@0.127.0:
+  version "0.127.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.127.0.tgz#c463f4d41b2c735dcf8e9e51a388815e80cd3791"
+  integrity sha512-wtgrn+mhYUbobxT7QN3GPdu3SRpSBQvwY6uOzLChWS7QE//f7paDU/+wlzbg+ngeIvBBqjBHSRuywTh8A99Jng==
 
 to-fast-properties@^2.0.0:
   version "2.0.0"

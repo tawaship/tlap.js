@@ -7,13 +7,13 @@ import del from 'del';
 
 const conf = require('./package.json');
 const version = conf.version;
-const pixi = conf.devDependencies['pixi.js'];
+const pixi = conf.devDependencies['three'];
 
 const banner = [
 	'/*!',
-	` * pixi-animate-container - v${version}`,
+	` * tlap.js - v${version}`,
 	' * ',
-	` * @require pixi.js v${pixi}`,
+	` * @require three.js v${three}`,
 	' * @author tawaship (makazu.mori@gmail.com)',
 	' * @license MIT',
 	' */',
