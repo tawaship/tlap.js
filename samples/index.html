@@ -333,7 +333,9 @@
 					
 					this.addCamera(new TLAP.Camera(camera, viewport));
 					
-					const reload = this.addChild(new TLAP.Sprite($.resources.textures.reload));
+					const container = this.addChild(new TLAP.Container2D());
+					
+					const reload = container.addChild(new TLAP.Sprite($.resources.textures.reload));
 					reload.on('pointertap', () => {
 						location.reload();
 					});
@@ -342,8 +344,8 @@
 					reload.anchor.set(0.5);
 					reload.scale.set(100 / reload.width, 100 / reload.width);
 					
-					reload.x = ($.width - reload.width) / 2;
-					reload.y = ($.height - reload.height) / 2;
+					container.x = ($.width - reload.width) / 2;
+					container.y = ($.height - reload.height) / 2;
 				}
 				
 				addScore(score) {
