@@ -5,4 +5,8 @@ export abstract class Object3D<T extends THREE.Object3D = THREE.Object3D> extend
 	get rotation() {
 		return this._three.rotation;
 	}
+	
+	updateTransform() {
+		
+	}
 }

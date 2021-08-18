@@ -1,6 +1,6 @@
 {
   "name": "@tawaship/tlap.js",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "main": "dist/tlap.js.cjs.js",
   "module": "dist/tlap.js.esm.js",
@@ -18,8 +18,8 @@
     "build": "ENV PROD=1 npm run rollup && npm run docs && npm run d && echo done."
   },
   "keywords": [
-    "pixi.js",
-    "pixi"
+    "three.js",
+    "three"
   ],
   "repository": {
     "type": "git",

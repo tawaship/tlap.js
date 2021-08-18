@@ -179,7 +179,6 @@ export class Application {
 			event.type = 'system:interaction:pointermove';
 			cast(e, x, y);
 			
-			// 開始がない
 			if (over.length === 0) {
 				if (event.emitted.length > 0) {
 					dispatch(event.emitted, 'pointerover');
@@ -189,7 +188,6 @@ export class Application {
 				return;
 			}
 			
-			// 開始はあるが乗っていない
 			if (event.emitted.length === 0) {
 				dispatch(over, 'pointerout');
 				over = [];
@@ -199,12 +197,10 @@ export class Application {
 			
 			const saparated = separate(over, event.emitted);
 			
-			// 共にあるが一致していない
 			dispatch(saparated.emitted, 'pointerover');
 			dispatch(saparated.first, 'pointerout');
 			over = event.emitted;
 			
-			// 共にあって一致
 			dispatch(saparated.both, 'pointermove');
 		}
 		
@@ -216,7 +212,6 @@ export class Application {
 			event.type = 'system:interaction:pointerup';
 			cast(e, x, y);
 			
-			// 開始がない
 			if (down.length === 0) {
 				if (event.emitted.length > 0) {
 					dispatch(event.emitted, 'pointerup');
@@ -225,7 +220,6 @@ export class Application {
 				return;
 			}
 			
-			// 開始はあるが終了がない
 			if (event.emitted.length === 0) {
 				dispatch(down, 'pointerupoutside');
 				down = [];
@@ -235,11 +229,9 @@ export class Application {
 			
 			const saparated = separate(down, event.emitted);
 			
-			// 共にあるが一致していない
 			dispatch(saparated.emitted, 'pointerup');
 			dispatch(saparated.first, 'pointerupoutside');
 			
-			// 共にあって一致
 			dispatch(saparated.both, 'pointerup');
 			dispatch(saparated.both, 'pointertap');
 			down = [];

@@ -42,6 +42,16 @@ export class PhysicsView extends View {
 	update(e: ITickerData) {
 		if (this.physicsEnabled) {
 			this._world.step(1 / 60);
+			
+			let body = this._world.getRigidBodyList();
+			while (body) {
+				const object = body.userData.ref;
+				if (object.sensorEnabled) {
+					object.aabbTest(this._world);
+				}
+				
+				body = body.getNext();
+			}
 		}
 		
 		this.updateTask(e);

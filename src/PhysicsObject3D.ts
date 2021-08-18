@@ -4,13 +4,27 @@ import OIMO from './OIMO';
 import { BodyPosition } from './BodyPosition';
 import { BodyRotation } from './BodyRotation';
 
+/**
+ * @ignore
+ */
+const event = { hit: null, originalEvent: null };
+
 export class PhysicsObject3D extends Object3D<THREE.Object3D> {
-	private _body: any;
-	private _contantEnabled: boolean = false;
-	private _position: BodyPosition;
-	private _rotation: BodyRotation;
+	protected _body: OIMO.RigidBody;
+	protected _contactEnabled: boolean = false;
+	protected _position: BodyPosition;
+	protected _rotation: BodyRotation;
 	
-	constructor(three: THREE.Object3D, body: any) {
+	protected _collisionGroup: number = 1;
+	protected _collisionMask: number = 1;
+	protected _contactCallback: OIMO.ContactCallback;
+	protected _isSensor: boolean = false;
+	protected _aabbTestCallback: OIMO.AabbTestCallback;
+	protected _touchedShapes: OIMO.Shape[] = [];
+	protected _touchShapes: OIMO.Shape[] = [];
+	protected _sensorEnabled: boolean = false;
+	
+	constructor(three: THREE.Object3D, body: OIMO.RigidBody) {
 		super(three);
 		
 		this._body = body;
@@ -19,6 +33,54 @@ export class PhysicsObject3D extends Object3D<THREE.Object3D> {
 		
 		body.userData = {};
 		body.userData.ref = this;
+		
+		const contactCallback = new OIMO.ContactCallback();
+		
+		contactCallback.beginContact = (e: any) => {
+			event.hit = e.getShape2().getRigidBody().userData.ref;
+			event.originalEvent = e;
+			this.emit('beginContact', event);
+		};
+		contactCallback.endContact = (e: any) => {
+			event.hit = e.getShape2().getRigidBody().userData.ref;
+			event.originalEvent = e;
+			this.emit('endContact', event);
+		};
+		contactCallback.preSolve = (e: any) => {
+			event.hit = e.getShape2().getRigidBody().userData.ref;
+			event.originalEvent = e;
+			this.emit('preSolve', event);
+		};
+		contactCallback.postSolve = (e: any) => {
+			event.hit = e.getShape2().getRigidBody().userData.ref;
+			event.originalEvent = e;
+			this.emit('postSolve', event);
+		};
+		
+		this._contactCallback = contactCallback;
+		
+		const aabbTestCallback = new OIMO.AabbTestCallback();
+		
+		aabbTestCallback.process = (shape: OIMO.Shape) => {
+			const object = shape.getRigidBody().userData.ref;
+			
+			if ((this._collisionMask & object.collisionGroup) === 0) {
+				return;
+			}
+			
+			event.hit = object;
+			event.originalEvent = null;
+			
+			const idx = this._touchedShapes.indexOf(shape);
+			if (idx === -1) {
+				this.emit('beginContact', event);
+			}
+			
+			this._touchedShapes.splice(idx, 1);
+			this._touchShapes.push(shape);
+		};
+		
+		this._aabbTestCallback = aabbTestCallback;
 	}
 	
 	get body() {
@@ -58,51 +120,85 @@ export class PhysicsObject3D extends Object3D<THREE.Object3D> {
 		return this._rotation;
 	}
 	
+	get sensorEnabled() {
+		return this._sensorEnabled;
+	}
+	
+	get isSensor() {
+		return this._isSensor;
+	}
+	
+	set isSensor(value) {
+		this._isSensor = value;
+		this._sensorEnabled = value && this._contactEnabled;
+		
+		this.contactEnabled = this._contactEnabled;
+		this.collisionGroup = this._collisionGroup;
+		this.collisionMask = this._collisionMask;
+	}
+	
 	get contactEnabled() {
-		return this._contantEnabled;
+		return this._contactEnabled;
 	}
 	
 	set contactEnabled(value) {
-		this._contantEnabled = value;
+		this._contactEnabled = value;
+		this._sensorEnabled = value && this._isSensor;
 		
-		if (!value) {
-			let shape = this._body.getShapeList();
-			while (shape) {
-				shape.setContactCallback(null);
-				shape = shape.getNext();
-			}
-			
-			return;
-		}
-		
-		const callback = new OIMO.ContactCallback();
-		const event = { hit: null, originalEvent: null };
-		
-		callback.beginContact = (e: any) => {
-			event.hit = e.getShape2().getRigidBody().userData.ref;
-			event.originalEvent = e;
-			this.emit('beginContact', event);
-		};
-		callback.endContact = (e: any) => {
-			event.hit = e.getShape2().getRigidBody().userData.ref;
-			event.originalEvent = e;
-			this.emit('endContact', event);
-		};
-		callback.preSolve = (e: any) => {
-			event.hit = e.getShape2().getRigidBody().userData.ref;
-			event.originalEvent = e;
-			this.emit('preSolve', event);
-		};
-		callback.postSolve = (e: any) => {
-			event.hit = e.getShape2().getRigidBody().userData.ref;
-			event.originalEvent = e;
-			this.emit('postSolve', event);
-		};
+		const callback = (!value || this._isSensor) ? null : this._contactCallback;
 		
 		let shape = this._body.getShapeList();
 		while (shape) {
 			shape.setContactCallback(callback);
 			shape = shape.getNext();
+		}
+	}
+	
+	get collisionGroup() {
+		return this._collisionGroup;
+	}
+	
+	set collisionGroup(value) {
+		const v = this._isSensor ? 0 : value;
+		this._collisionGroup = value;
+		
+		let shape = this._body.getShapeList();
+		while (shape) {
+			shape.setCollisionGroup(v);
+			shape = shape.getNext();
+		}
+	}
+	
+	get collisionMask() {
+		return this._collisionMask;
+	}
+	
+	set collisionMask(value) {
+		const v = this._isSensor ? 0 : value;
+		this._collisionMask = value;
+		
+		let shape = this._body.getShapeList();
+		while (shape) {
+			shape.setCollisionMask(v);
+			shape = shape.getNext();
+		}
+	}
+	
+	aabbTest(world: OIMO.World) {
+		this._touchedShapes = this._touchShapes;
+		this._touchShapes = [];
+		
+		let shape = this._body.getShapeList();
+		while (shape) {
+			world.aabbTest(shape.getAabb(), this._aabbTestCallback);
+			shape = shape.getNext();
+		}
+		
+		for (let i = 0; i < this._touchedShapes.length; i++) {
+			const shape = this._touchedShapes[i];
+			event.hit = shape.getRigidBody().userData.ref;
+			event.originalEvent = null;
+			this.emit('endContact', event);
 		}
 	}
 	

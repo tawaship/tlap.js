@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v1.0.0
+ * tlap.js - v0.0.0
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -668,7 +668,8 @@
         };
         return prototypeAccessors.rotation.get = function() {
             return this._three.rotation;
-        }, Object.defineProperties(Object3D.prototype, prototypeAccessors), Object3D;
+        }, Object3D.prototype.updateTransform = function() {}, Object.defineProperties(Object3D.prototype, prototypeAccessors), 
+        Object3D;
     }(DisplayObject), Camera = function(Object3D) {
         function Camera(camera, viewport) {
             Object3D.call(this, camera), this._viewport = viewport;
@@ -745,42 +746,6 @@
     function resolveVersion(url, version) {
         return version ? url + (url.match(/\?/) ? "&" : "?") + "_fv=" + version : url;
     }
-    function loadTexturesAsync(data, basepath, version) {
-        var loader = new THREE.TextureLoader, promises = [], textures = {}, loop = function(i) {
-            promises.push(new Promise((function(resolve, reject) {
-                var url = resolveVersion(resolvePath(data[i], basepath), version);
-                loader.load(url, (function(texture) {
-                    textures[i] = texture, resolve();
-                }), void 0, (function(e) {
-                    reject(e);
-                }));
-            })));
-        };
-        for (var i in data) {
-            loop(i);
-        }
-        return Promise.all(promises).then((function() {
-            return textures;
-        }));
-    }
-    function loadGLTFsAsync(data, basepath, version) {
-        var loader = new GLTFLoader.GLTFLoader, promises = [], models = {}, loop = function(i) {
-            promises.push(new Promise((function(resolve, reject) {
-                var url = resolveVersion(resolvePath(data[i], basepath), version);
-                loader.load(url, (function(model) {
-                    models[i] = model, resolve();
-                }), void 0, (function(e) {
-                    reject(e);
-                }));
-            })));
-        };
-        for (var i in data) {
-            loop(i);
-        }
-        return Promise.all(promises).then((function() {
-            return models;
-        }));
-    }
     var _assetLoaders = {}, Content = function() {
         this._assetDefines = {}, this._viewClasses = [], this._vars = {};
     }, prototypeAccessors$5 = {
@@ -795,6 +760,11 @@
         return this._viewClasses;
     }, prototypeAccessors$5.vars.get = function() {
         return Object.assign({}, this._vars);
+    }, Content.prototype.defineViews = function(viewClasses) {
+        var this$1 = this;
+        Array.isArray(viewClasses) || (viewClasses = [ viewClasses ]), viewClasses.forEach((function(viewClass) {
+            this$1._viewClasses.push(viewClass);
+        }));
     }, Content.prototype.defineAssets = function(key, data) {
         for (var i in this._assetDefines[key] = this._assetDefines[key] || {}, data) {
             this._assetDefines[key][i] = data[i];
@@ -815,16 +785,47 @@
         return Promise.all(promises).then((function() {
             return resources;
         }));
-    }, Content.prototype.setView = function(viewClass) {
-        this._viewClasses.push(viewClass);
-    }, Content.prototype.addVars = function(data) {
+    }, Content.prototype.defineVars = function(data) {
         for (var i in data) {
             this._vars[i] = data[i];
         }
     }, Content.registerLoader = function(key, delegate) {
         _assetLoaders[key] = delegate;
-    }, Object.defineProperties(Content.prototype, prototypeAccessors$5), Content.registerLoader("textures", loadTexturesAsync), 
-    Content.registerLoader("glbs", loadGLTFsAsync);
+    }, Object.defineProperties(Content.prototype, prototypeAccessors$5), Content.registerLoader("textures", (function(data, basepath, version) {
+        var loader = new THREE.TextureLoader, promises = [], textures = {}, loop = function(i) {
+            promises.push(new Promise((function(resolve, reject) {
+                var url = resolveVersion(resolvePath(data[i], basepath), version);
+                loader.load(url, (function(texture) {
+                    textures[i] = texture, resolve();
+                }), void 0, (function(e) {
+                    reject(e);
+                }));
+            })));
+        };
+        for (var i in data) {
+            loop(i);
+        }
+        return Promise.all(promises).then((function() {
+            return textures;
+        }));
+    })), Content.registerLoader("glbs", (function(data, basepath, version) {
+        var loader = new GLTFLoader.GLTFLoader, promises = [], models = {}, loop = function(i) {
+            promises.push(new Promise((function(resolve, reject) {
+                var url = resolveVersion(resolvePath(data[i], basepath), version);
+                loader.load(url, (function(model) {
+                    models[i] = model, resolve();
+                }), void 0, (function(e) {
+                    reject(e);
+                }));
+            })));
+        };
+        for (var i in data) {
+            loop(i);
+        }
+        return Promise.all(promises).then((function() {
+            return models;
+        }));
+    }));
     var Mesh = function(Object3D) {
         function Mesh(geometry, material) {
             Object3D.call(this, new THREE.Mesh(geometry, material)), this._anchor = new Anchor(0, 0, 0, this), 
@@ -844,12 +845,41 @@
         }, Mesh.prototype.updateBoundingBox = function() {
             this._three.geometry.computeBoundingBox(), this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size), 
             this._size.multiply(this.scale);
-        }, Mesh.prototype.updateTransform = function() {}, Object.defineProperties(Mesh.prototype, prototypeAccessors), 
-        Mesh;
-    }(Object3D), OIMO$1 = OIMO, PhysicsObject3D = function(Object3D) {
+        }, Object.defineProperties(Mesh.prototype, prototypeAccessors), Mesh;
+    }(Object3D), OIMO$1 = OIMO, event = {
+        hit: null,
+        originalEvent: null
+    }, PhysicsObject3D = function(Object3D) {
         function PhysicsObject3D(three, body) {
-            Object3D.call(this, three), this._contantEnabled = !1, this._body = body, this._position = new BodyPosition(this), 
+            var this$1 = this;
+            Object3D.call(this, three), this._contactEnabled = !1, this._collisionGroup = 1, 
+            this._collisionMask = 1, this._isSensor = !1, this._touchedShapes = [], this._touchShapes = [], 
+            this._sensorEnabled = !1, this._body = body, this._position = new BodyPosition(this), 
             this._rotation = new BodyRotation(this), body.userData = {}, body.userData.ref = this;
+            var contactCallback = new OIMO$1.ContactCallback;
+            contactCallback.beginContact = function(e) {
+                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
+                this$1.emit("beginContact", event);
+            }, contactCallback.endContact = function(e) {
+                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
+                this$1.emit("endContact", event);
+            }, contactCallback.preSolve = function(e) {
+                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
+                this$1.emit("preSolve", event);
+            }, contactCallback.postSolve = function(e) {
+                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
+                this$1.emit("postSolve", event);
+            }, this._contactCallback = contactCallback;
+            var aabbTestCallback = new OIMO$1.AabbTestCallback;
+            aabbTestCallback.process = function(shape) {
+                var object = shape.getRigidBody().userData.ref;
+                if (0 != (this$1._collisionMask & object.collisionGroup)) {
+                    event.hit = object, event.originalEvent = null;
+                    var idx = this$1._touchedShapes.indexOf(shape);
+                    -1 === idx && this$1.emit("beginContact", event), this$1._touchedShapes.splice(idx, 1), 
+                    this$1._touchShapes.push(shape);
+                }
+            }, this._aabbTestCallback = aabbTestCallback;
         }
         Object3D && (PhysicsObject3D.__proto__ = Object3D), PhysicsObject3D.prototype = Object.create(Object3D && Object3D.prototype), 
         PhysicsObject3D.prototype.constructor = PhysicsObject3D;
@@ -872,7 +902,19 @@
             rotation: {
                 configurable: !0
             },
+            sensorEnabled: {
+                configurable: !0
+            },
+            isSensor: {
+                configurable: !0
+            },
             contactEnabled: {
+                configurable: !0
+            },
+            collisionGroup: {
+                configurable: !0
+            },
+            collisionMask: {
                 configurable: !0
             }
         };
@@ -894,35 +936,44 @@
             return this._position;
         }, prototypeAccessors.rotation.get = function() {
             return this._rotation;
+        }, prototypeAccessors.sensorEnabled.get = function() {
+            return this._sensorEnabled;
+        }, prototypeAccessors.isSensor.get = function() {
+            return this._isSensor;
+        }, prototypeAccessors.isSensor.set = function(value) {
+            this._isSensor = value, this._sensorEnabled = value && this._contactEnabled, this.contactEnabled = this._contactEnabled, 
+            this.collisionGroup = this._collisionGroup, this.collisionMask = this._collisionMask;
         }, prototypeAccessors.contactEnabled.get = function() {
-            return this._contantEnabled;
+            return this._contactEnabled;
         }, prototypeAccessors.contactEnabled.set = function(value) {
-            var this$1 = this;
-            if (this._contantEnabled = value, value) {
-                var callback = new OIMO$1.ContactCallback, event = {
-                    hit: null,
-                    originalEvent: null
-                };
-                callback.beginContact = function(e) {
-                    event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                    this$1.emit("beginContact", event);
-                }, callback.endContact = function(e) {
-                    event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                    this$1.emit("endContact", event);
-                }, callback.preSolve = function(e) {
-                    event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                    this$1.emit("preSolve", event);
-                }, callback.postSolve = function(e) {
-                    event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                    this$1.emit("postSolve", event);
-                };
-                for (var shape = this._body.getShapeList(); shape; ) {
-                    shape.setContactCallback(callback), shape = shape.getNext();
-                }
-            } else {
-                for (var shape$1 = this._body.getShapeList(); shape$1; ) {
-                    shape$1.setContactCallback(null), shape$1 = shape$1.getNext();
-                }
+            this._contactEnabled = value, this._sensorEnabled = value && this._isSensor;
+            for (var callback = !value || this._isSensor ? null : this._contactCallback, shape = this._body.getShapeList(); shape; ) {
+                shape.setContactCallback(callback), shape = shape.getNext();
+            }
+        }, prototypeAccessors.collisionGroup.get = function() {
+            return this._collisionGroup;
+        }, prototypeAccessors.collisionGroup.set = function(value) {
+            var v = this._isSensor ? 0 : value;
+            this._collisionGroup = value;
+            for (var shape = this._body.getShapeList(); shape; ) {
+                shape.setCollisionGroup(v), shape = shape.getNext();
+            }
+        }, prototypeAccessors.collisionMask.get = function() {
+            return this._collisionMask;
+        }, prototypeAccessors.collisionMask.set = function(value) {
+            var v = this._isSensor ? 0 : value;
+            this._collisionMask = value;
+            for (var shape = this._body.getShapeList(); shape; ) {
+                shape.setCollisionMask(v), shape = shape.getNext();
+            }
+        }, PhysicsObject3D.prototype.aabbTest = function(world) {
+            this._touchedShapes = this._touchShapes, this._touchShapes = [];
+            for (var shape = this._body.getShapeList(); shape; ) {
+                world.aabbTest(shape.getAabb(), this._aabbTestCallback), shape = shape.getNext();
+            }
+            for (var i = 0; i < this._touchedShapes.length; i++) {
+                var shape$1 = this._touchedShapes[i];
+                event.hit = shape$1.getRigidBody().userData.ref, event.originalEvent = null, this.emit("endContact", event);
             }
         }, PhysicsObject3D.prototype.updateTransform = function() {
             this._three.position.copy(this._body.getPosition()), this._three.quaternion.copy(this._body.getOrientation());
@@ -1018,7 +1069,14 @@
                 return this._world.removeRigidBody(object.body), o;
             }
         }, PhysicsView.prototype.update = function(e) {
-            this.physicsEnabled && this._world.step(1 / 60), this.updateTask(e);
+            if (this.physicsEnabled) {
+                this._world.step(1 / 60);
+                for (var body = this._world.getRigidBodyList(); body; ) {
+                    var object = body.userData.ref;
+                    object.sensorEnabled && object.aabbTest(this._world), body = body.getNext();
+                }
+            }
+            this.updateTask(e);
             var c = this._children;
             for (var i in this._children) {
                 c[i].update(e);
@@ -1055,7 +1113,7 @@
         }, Sprite.prototype.updateBoundingBox = function() {
             this._three.geometry.computeBoundingBox(), this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size), 
             this._size.multiply(this.scale);
-        }, Sprite.prototype.updateTransform = function() {}, Sprite.from = function(url, callback) {
+        }, Sprite.from = function(url, callback) {
             var sprite = new Sprite((new THREE.TextureLoader).load(url, (function(texture) {
                 sprite.texture = texture, callback && callback(sprite);
             })));
@@ -1066,9 +1124,7 @@
     exports.BodyRotation = BodyRotation, exports.Camera = Camera, exports.Container2D = Container2D, 
     exports.Container3D = Container3D, exports.Content = Content, exports.DisplayObject = DisplayObject, 
     exports.Mesh = Mesh, exports.Object2D = Object2D, exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, 
-    exports.PhysicsView = PhysicsView, exports.Sprite = Sprite, exports.View = View, 
-    exports.loadGLTFsAsync = loadGLTFsAsync, exports.loadTexturesAsync = loadTexturesAsync, 
-    exports.resolvePath = resolvePath, exports.resolveVersion = resolveVersion;
+    exports.PhysicsView = PhysicsView, exports.Sprite = Sprite, exports.View = View;
 }(this.TLAP = this.TLAP || {}, THREE, {
     GLTFLoader: THREE.GLTFLoader
 });

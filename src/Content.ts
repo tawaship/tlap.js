@@ -2,7 +2,10 @@ import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { View } from './View';
 
-export function resolvePath(path: string, basepath: string) {
+/**
+ * @ignore
+ */
+function resolvePath(path: string, basepath: string) {
 	if (path.indexOf('http://') === 0 || path.indexOf('https://') === 0 || path.indexOf('//') === 0 || path.indexOf('/') === 0) {
 		return path;
 	} else {
@@ -10,7 +13,10 @@ export function resolvePath(path: string, basepath: string) {
 	}
 }
 
-export function resolveVersion(url: string, version: string) {
+/**
+ * @ignore
+ */
+function resolveVersion(url: string, version: string) {
 	if (!version) {
 		return url;
 	}
@@ -34,7 +40,10 @@ export interface ITextureDictionary extends IAssetDictionary<THREE.Texture> {
 
 }
 
-export function loadTexturesAsync(data: ITextureDefinitionDictionary, basepath: string, version: string): Promise<ITextureDictionary> {
+/**
+ * @ignore
+ */
+function loadTexturesAsync(data: ITextureDefinitionDictionary, basepath: string, version: string): Promise<ITextureDictionary> {
 	const loader = new THREE.TextureLoader();
 	const promises: Promise<void>[] = [];
 	const textures: ITextureDictionary = {};
@@ -64,7 +73,10 @@ export interface IGLTFDictionary extends IAssetDictionary<GLTF> {
 
 }
 
-export function loadGLTFsAsync(data: IGLTFDefinitionDictionary, basepath: string, version: string): Promise<IGLTFDictionary> {
+/**
+ * @ignore
+ */
+function loadGLTFsAsync(data: IGLTFDefinitionDictionary, basepath: string, version: string): Promise<IGLTFDictionary> {
 	const loader = new GLTFLoader();
 	const promises: Promise<void>[] = [];
 	const models: IGLTFDictionary = {};
@@ -116,6 +128,16 @@ export class Content {
 		return Object.assign({}, this._vars);
 	}
 	
+	defineViews(viewClasses: typeof View | typeof View[]) {
+		if (!Array.isArray(viewClasses)) {
+			viewClasses = [ viewClasses ];
+		}
+		
+		viewClasses.forEach(viewClass => {
+			this._viewClasses.push(viewClass);
+		});
+	}
+	
 	defineAssets<T>(key: string, data: IAssetDefinitionDictionary<T>) {
 		this._assetDefines[key] = this._assetDefines[key] || {};
 		
@@ -152,11 +174,7 @@ export class Content {
 		return Promise.all(promises).then(() => resources);
 	}
 	
-	setView(viewClass: typeof View) {
-		this._viewClasses.push(viewClass);
-	}
-	
-	addVars(data: IVariableDictionary) {
+	defineVars(data: IVariableDictionary) {
 		for (let i in data) {
 			this._vars[i] = data[i];
 		}

@@ -62,10 +62,6 @@ export class Sprite extends Object2D<THREE.Mesh> implements IMesh {
 		this._size.multiply(this.scale);
 	}
 	
-	updateTransform() {
-		
-	}
-	
 	static from(url: string, callback: (sprite: Sprite) => void) {
 		const sprite = new Sprite(new THREE.TextureLoader().load(url, texture => {
 			sprite.texture = texture;

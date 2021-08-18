@@ -29,8 +29,4 @@ export class Mesh extends Object3D<THREE.Mesh> implements IMesh {
 		this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size);
 		this._size.multiply(this.scale);
 	}
-	
-	updateTransform() {
-		
-	}
 }
