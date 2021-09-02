@@ -74,9 +74,10 @@ export class PhysicsObject3D extends Object3D<THREE.Object3D> {
 			const idx = this._touchedShapes.indexOf(shape);
 			if (idx === -1) {
 				this.emit('beginContact', event);
+			} else {
+				this._touchedShapes.splice(idx, 1);
 			}
 			
-			this._touchedShapes.splice(idx, 1);
 			this._touchShapes.push(shape);
 		};
 		

@@ -1,6 +1,6 @@
 {
   "name": "@tawaship/tlap.js",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/tlap.js.cjs.js",
   "module": "dist/tlap.js.esm.js",

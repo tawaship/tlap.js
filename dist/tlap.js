@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.0.0
+ * tlap.js - v0.0.1
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -876,7 +876,7 @@
                 if (0 != (this$1._collisionMask & object.collisionGroup)) {
                     event.hit = object, event.originalEvent = null;
                     var idx = this$1._touchedShapes.indexOf(shape);
-                    -1 === idx && this$1.emit("beginContact", event), this$1._touchedShapes.splice(idx, 1), 
+                    -1 === idx ? this$1.emit("beginContact", event) : this$1._touchedShapes.splice(idx, 1), 
                     this$1._touchShapes.push(shape);
                 }
             }, this._aabbTestCallback = aabbTestCallback;
