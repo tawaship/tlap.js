@@ -14,10 +14,4 @@ export class Container3D extends Object3D<THREE.Group> {
 		this._sub.position.y = -this._pivot.y;
 		this._sub.position.z = -this._pivot.z;
 	}
-	
-	updateBoundingBox() {
-		this._three.remove(this._sub);
-		super.updateBoundingBox();
-		this._three.add(this._sub)
-	}
 }

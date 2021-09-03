@@ -156,7 +156,9 @@ export abstract class DisplayObject<T extends THREE.Object3D = THREE.Object3D> e
 	updateBoundingBox() {
 		this.updateTransform();
 		
+		this._three.remove(this._sub)
 		_box.setFromObject(this._sub);
+		this._three.add(this._sub)
 		_box.getSize(this._size);
 		this._size.multiply(this.scale);
 	}

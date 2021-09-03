@@ -641,8 +641,8 @@
                 c[i].update(e);
             }
         }, DisplayObject.prototype.updateBoundingBox = function() {
-            this.updateTransform(), this._three.remove(this._sub), _box.setFromObject(this._sub), 
-            this._three.add(this._sub), _box.getSize(this._size), this._size.multiply(this.scale);
+            this.updateTransform(), _box.setFromObject(this._sub), _box.getSize(this._size), 
+            this._size.multiply(this.scale);
         }, DisplayObject.prototype.addChild = function(object) {
             return object.parent && object.parent.removeChild(object), this._children.push(object), 
             this._sub.add(object.three), object.three.userData.parent = this, object;
@@ -728,8 +728,12 @@
             for (var c = this._children, i = 0; i < c.length; i++) {
                 c[i].three.position.z = 1e-7 * i;
             }
-        }, Container2D.prototype.updateTransform = function() {
-            this._updateMatrix();
+        }, Container2D.prototype.updateBoundingBox = function() {
+            this._three.remove(this._sub);
+            for (var i = 0; i < this._children.length; i++) {
+                this._children[i].updateTransform();
+            }
+            Object2D.prototype.updateBoundingBox.call(this), this._three.add(this._sub);
         }, Container2D;
     }(Object2D), Container3D = function(Object3D) {
         function Container3D() {
@@ -738,6 +742,9 @@
         return Object3D && (Container3D.__proto__ = Object3D), Container3D.prototype = Object.create(Object3D && Object3D.prototype), 
         Container3D.prototype.constructor = Container3D, Container3D.prototype.updateTransform = function() {
             this._sub.position.x = -this._pivot.x, this._sub.position.y = -this._pivot.y, this._sub.position.z = -this._pivot.z;
+        }, Container3D.prototype.updateBoundingBox = function() {
+            this._three.remove(this._sub), Object3D.prototype.updateBoundingBox.call(this), 
+            this._three.add(this._sub);
         }, Container3D;
     }(Object3D);
     function resolvePath(path, basepath) {
@@ -846,40 +853,10 @@
             this._three.geometry.computeBoundingBox(), this._three.geometry.boundingBox && this._three.geometry.boundingBox.getSize(this._size), 
             this._size.multiply(this.scale);
         }, Object.defineProperties(Mesh.prototype, prototypeAccessors), Mesh;
-    }(Object3D), OIMO$1 = OIMO, event = {
-        hit: null,
-        originalEvent: null
-    }, PhysicsObject3D = function(Object3D) {
+    }(Object3D), PhysicsObject3D = function(Object3D) {
         function PhysicsObject3D(three, body) {
-            var this$1 = this;
-            Object3D.call(this, three), this._contactEnabled = !1, this._collisionGroup = 1, 
-            this._collisionMask = 1, this._isSensor = !1, this._touchedShapes = [], this._touchShapes = [], 
-            this._sensorEnabled = !1, this._body = body, this._position = new BodyPosition(this), 
-            this._rotation = new BodyRotation(this), body.userData = {}, body.userData.ref = this;
-            var contactCallback = new OIMO$1.ContactCallback;
-            contactCallback.beginContact = function(e) {
-                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                this$1.emit("beginContact", event);
-            }, contactCallback.endContact = function(e) {
-                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                this$1.emit("endContact", event);
-            }, contactCallback.preSolve = function(e) {
-                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                this$1.emit("preSolve", event);
-            }, contactCallback.postSolve = function(e) {
-                event.hit = e.getShape2().getRigidBody().userData.ref, event.originalEvent = e, 
-                this$1.emit("postSolve", event);
-            }, this._contactCallback = contactCallback;
-            var aabbTestCallback = new OIMO$1.AabbTestCallback;
-            aabbTestCallback.process = function(shape) {
-                var object = shape.getRigidBody().userData.ref;
-                if (0 != (this$1._collisionMask & object.collisionGroup)) {
-                    event.hit = object, event.originalEvent = null;
-                    var idx = this$1._touchedShapes.indexOf(shape);
-                    -1 === idx ? this$1.emit("beginContact", event) : this$1._touchedShapes.splice(idx, 1), 
-                    this$1._touchShapes.push(shape);
-                }
-            }, this._aabbTestCallback = aabbTestCallback;
+            Object3D.call(this, three), this._contactEnabled = !1, this._body = body, this._position = new BodyPosition(this), 
+            this._rotation = new BodyRotation(this), body.userData.ref = this;
         }
         Object3D && (PhysicsObject3D.__proto__ = Object3D), PhysicsObject3D.prototype = Object.create(Object3D && Object3D.prototype), 
         PhysicsObject3D.prototype.constructor = PhysicsObject3D;
@@ -901,21 +878,6 @@
             },
             rotation: {
                 configurable: !0
-            },
-            sensorEnabled: {
-                configurable: !0
-            },
-            isSensor: {
-                configurable: !0
-            },
-            contactEnabled: {
-                configurable: !0
-            },
-            collisionGroup: {
-                configurable: !0
-            },
-            collisionMask: {
-                configurable: !0
             }
         };
         return prototypeAccessors.body.get = function() {
@@ -936,49 +898,9 @@
             return this._position;
         }, prototypeAccessors.rotation.get = function() {
             return this._rotation;
-        }, prototypeAccessors.sensorEnabled.get = function() {
-            return this._sensorEnabled;
-        }, prototypeAccessors.isSensor.get = function() {
-            return this._isSensor;
-        }, prototypeAccessors.isSensor.set = function(value) {
-            this._isSensor = value, this._sensorEnabled = value && this._contactEnabled, this.contactEnabled = this._contactEnabled, 
-            this.collisionGroup = this._collisionGroup, this.collisionMask = this._collisionMask;
-        }, prototypeAccessors.contactEnabled.get = function() {
-            return this._contactEnabled;
-        }, prototypeAccessors.contactEnabled.set = function(value) {
-            this._contactEnabled = value, this._sensorEnabled = value && this._isSensor;
-            for (var callback = !value || this._isSensor ? null : this._contactCallback, shape = this._body.getShapeList(); shape; ) {
-                shape.setContactCallback(callback), shape = shape.getNext();
-            }
-        }, prototypeAccessors.collisionGroup.get = function() {
-            return this._collisionGroup;
-        }, prototypeAccessors.collisionGroup.set = function(value) {
-            var v = this._isSensor ? 0 : value;
-            this._collisionGroup = value;
-            for (var shape = this._body.getShapeList(); shape; ) {
-                shape.setCollisionGroup(v), shape = shape.getNext();
-            }
-        }, prototypeAccessors.collisionMask.get = function() {
-            return this._collisionMask;
-        }, prototypeAccessors.collisionMask.set = function(value) {
-            var v = this._isSensor ? 0 : value;
-            this._collisionMask = value;
-            for (var shape = this._body.getShapeList(); shape; ) {
-                shape.setCollisionMask(v), shape = shape.getNext();
-            }
-        }, PhysicsObject3D.prototype.aabbTest = function(world) {
-            this._touchedShapes = this._touchShapes, this._touchShapes = [];
-            for (var shape = this._body.getShapeList(); shape; ) {
-                world.aabbTest(shape.getAabb(), this._aabbTestCallback), shape = shape.getNext();
-            }
-            for (var i = 0; i < this._touchedShapes.length; i++) {
-                var shape$1 = this._touchedShapes[i];
-                event.hit = shape$1.getRigidBody().userData.ref, event.originalEvent = null, this.emit("endContact", event);
-            }
         }, PhysicsObject3D.prototype.updateTransform = function() {
             this._three.position.copy(this._body.getPosition()), this._three.quaternion.copy(this._body.getOrientation());
-        }, PhysicsObject3D.prototype.updateBoundingBox = function() {}, Object.defineProperties(PhysicsObject3D.prototype, prototypeAccessors), 
-        PhysicsObject3D;
+        }, Object.defineProperties(PhysicsObject3D.prototype, prototypeAccessors), PhysicsObject3D;
     }(Object3D), View = function(Object3D) {
         function View($) {
             Object3D.call(this, new THREE.Scene), this._cameras = [], this.interactive = !0;
@@ -1047,9 +969,16 @@
             }
         }, View.prototype.updateTransform = function() {}, Object.defineProperties(View.prototype, prototypeAccessors), 
         View;
-    }(Object3D), PhysicsView = function(View) {
+    }(Object3D), OIMO$1 = OIMO, PhysicsView = function(View) {
         function PhysicsView() {
-            View.call(this), this.physicsEnabled = !0, this._world = new OIMO$1.World, this._world.setGravity(new OIMO$1.Vec3(0, -9.8, 0));
+            var this$1 = this;
+            View.call(this), this._sensoredShapes = [], this.physicsEnabled = !0, this._world = new OIMO$1.World, 
+            this._world.setGravity(new OIMO$1.Vec3(0, -9.8, 0)), this._onShapeAdded = function(shape) {
+                -1 === this$1._sensoredShapes.indexOf(shape) && this$1._sensoredShapes.push(shape);
+            }, this._onShapeRemoved = function(shape) {
+                var index = this$1._sensoredShapes.indexOf(shape);
+                index > -1 && this$1._sensoredShapes.splice(index, 1);
+            };
         }
         View && (PhysicsView.__proto__ = View), PhysicsView.prototype = Object.create(View && View.prototype), 
         PhysicsView.prototype.constructor = PhysicsView;
@@ -1061,28 +990,199 @@
         return prototypeAccessors.world.get = function() {
             return this._world;
         }, PhysicsView.prototype.addChild = function(object) {
-            return View.prototype.addChild.call(this, object), this._world.addRigidBody(object.body), 
+            View.prototype.addChild.call(this, object), this._world.addRigidBody(object.body);
+            for (var sensoredShapes = object.body.getSensoredShapeList(), i = 0; i < sensoredShapes.length; i++) {
+                this._onShapeAdded(sensoredShapes[i]);
+            }
+            return object.body.on("sensoredShapeAdded", this._onShapeAdded), object.body.on("sensoredShapeRemoved", this._onShapeRemoved), 
             object;
         }, PhysicsView.prototype.removeChild = function(object) {
             var o = View.prototype.removeChild.call(this, object);
             if (o) {
-                return this._world.removeRigidBody(object.body), o;
+                this._world.removeRigidBody(object.body);
+                for (var sensoredShapes = object.body.getSensoredShapeList(), i = 0; i < sensoredShapes.length; i++) {
+                    this._onShapeRemoved(sensoredShapes[i]);
+                }
+                return object.body.off("sensoredShapeAdded", this._onShapeAdded), object.body.off("sensoredShapeRemoved", this._onShapeRemoved), 
+                o;
             }
         }, PhysicsView.prototype.update = function(e) {
             if (this.physicsEnabled) {
                 this._world.step(1 / 60);
-                for (var body = this._world.getRigidBodyList(); body; ) {
-                    var object = body.userData.ref;
-                    object.sensorEnabled && object.aabbTest(this._world), body = body.getNext();
+                for (var i = 0; i < this._sensoredShapes.length; i++) {
+                    this._sensoredShapes[i].aabbTest(this._world);
                 }
             }
             this.updateTask(e);
             var c = this._children;
-            for (var i in this._children) {
-                c[i].update(e);
+            for (var i$1 in this._children) {
+                c[i$1].update(e);
             }
         }, Object.defineProperties(PhysicsView.prototype, prototypeAccessors), PhysicsView;
-    }(View), Sprite = function(Object2D) {
+    }(View), event = {
+        hit: null,
+        originalEvent: null
+    }, contactCallback = new OIMO$1.ContactCallback;
+    function contactHandler(type, e) {
+        var selfShape = e.getShape1(), opponentShape = e.getShape2();
+        event.originalEvent = e, event.hit = opponentShape, selfShape.emit(type, event);
+    }
+    contactCallback.beginContact = function(e) {
+        contactHandler("beginContact", e);
+    }, contactCallback.endContact = function(e) {
+        contactHandler("endContact", e);
+    }, contactCallback.preSolve = function(e) {
+        contactHandler("preSolve", e);
+    }, contactCallback.postSolve = function(e) {
+        contactHandler("postSolve", e);
+    };
+    var Shape = function(superclass) {
+        function Shape(shapeConfig) {
+            superclass.call(this, shapeConfig), this._collisionEnabled = !0, this._contactEnabled = !1, 
+            this._emitter = new Emitter, this._collisionGroup = this.getCollisionGroup(), this._collisionMask = this.getCollisionMask(), 
+            this._updateCollisionGroup(), this._updateCollisionMask();
+        }
+        superclass && (Shape.__proto__ = superclass), Shape.prototype = Object.create(superclass && superclass.prototype), 
+        Shape.prototype.constructor = Shape;
+        var prototypeAccessors = {
+            collisionGroup: {
+                configurable: !0
+            },
+            collisionMask: {
+                configurable: !0
+            },
+            collisionEnabled: {
+                configurable: !0
+            },
+            contectEnabled: {
+                configurable: !0
+            },
+            contactEnabled: {
+                configurable: !0
+            }
+        };
+        return Shape.prototype.on = function(type, callback) {
+            this._emitter.on(type, callback);
+        }, Shape.prototype.off = function(type, callback) {
+            this._emitter.off(type, callback);
+        }, Shape.prototype.emit = function(type) {
+            for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
+                args[len] = arguments[len + 1];
+            }
+            (ref = this._emitter).cemit.apply(ref, [ type, this ].concat(args));
+        }, prototypeAccessors.collisionGroup.get = function() {
+            return this._collisionGroup;
+        }, prototypeAccessors.collisionMask.get = function() {
+            return this._collisionMask;
+        }, prototypeAccessors.collisionEnabled.get = function() {
+            return this._collisionEnabled;
+        }, prototypeAccessors.collisionEnabled.set = function(value) {
+            this._collisionEnabled = value, this._updateCollisionGroup(), this._updateCollisionMask();
+        }, prototypeAccessors.contectEnabled.get = function() {
+            return this._contactEnabled;
+        }, prototypeAccessors.contactEnabled.set = function(value) {
+            this._contactEnabled = value, value ? this.setContactCallback(contactCallback) : this.setContactCallback(null);
+        }, Shape.prototype.setCollisionGroup = function(collisionGroup) {
+            this._collisionGroup = collisionGroup, this._updateCollisionGroup();
+        }, Shape.prototype.setCollisionMask = function(collisionMask) {
+            this._collisionMask = collisionMask, this._updateCollisionMask();
+        }, Shape.prototype._setCollisionGroup = function(collisionGroup) {
+            superclass.prototype.setCollisionGroup.call(this, collisionGroup);
+        }, Shape.prototype._setCollisionMask = function(collisionMask) {
+            superclass.prototype.setCollisionMask.call(this, collisionMask);
+        }, Shape.prototype._updateCollisionGroup = function() {
+            this._collisionEnabled ? this._setCollisionMask(this._collisionGroup) : this._setCollisionGroup(0);
+        }, Shape.prototype._updateCollisionMask = function() {
+            this._collisionEnabled ? this._setCollisionMask(this._collisionMask) : this._setCollisionMask(0);
+        }, Shape.prototype.getObject = function() {
+            var body = this.getRigidBody();
+            if (body) {
+                return body.getObject();
+            }
+        }, Object.defineProperties(Shape.prototype, prototypeAccessors), Shape;
+    }(OIMO$1.Shape);
+    function sensorHandler(type, selfShape, opponentShape) {
+        event.originalEvent = null, event.hit = opponentShape, selfShape.emit(type, event);
+    }
+    var SensoredShape = function(Shape) {
+        function SensoredShape(shapeConfig) {
+            var this$1 = this;
+            Shape.call(this, shapeConfig), this._sensorEnabled = !0, this._aabbTestCallback = new OIMO$1.AabbTestCallback, 
+            this._touchedShapes = [], this._touchShapes = [], this.contactEnabled = !0, this._updateCollisionGroup(), 
+            this._updateCollisionMask(), this._aabbTestCallback.process = function(shape) {
+                if (0 != (this$1._collisionMask & shape.collisionGroup) && 0 != (this$1._collisionGroup & shape.collisionMask)) {
+                    var index = this$1._touchedShapes.indexOf(shape);
+                    -1 === index ? sensorHandler("beginContact", this$1, shape) : this$1._touchedShapes.splice(index, 1), 
+                    this$1._touchShapes.push(shape);
+                }
+            };
+        }
+        Shape && (SensoredShape.__proto__ = Shape), SensoredShape.prototype = Object.create(Shape && Shape.prototype), 
+        SensoredShape.prototype.constructor = SensoredShape;
+        var prototypeAccessors$1 = {
+            sensorEnabled: {
+                configurable: !0
+            },
+            isSensor: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors$1.sensorEnabled.get = function() {
+            return this._sensorEnabled;
+        }, prototypeAccessors$1.sensorEnabled.set = function(value) {
+            this._sensorEnabled = value, this._updateCollisionGroup(), this._updateCollisionMask();
+        }, prototypeAccessors$1.isSensor.get = function() {
+            return this._collisionEnabled && this._contactEnabled && this._sensorEnabled;
+        }, SensoredShape.prototype.aabbTest = function(world) {
+            if (this.isSensor) {
+                this._touchedShapes = this._touchShapes, this._touchShapes = [], world.aabbTest(this.getAabb(), this._aabbTestCallback);
+                for (var i = 0; i < this._touchedShapes.length; i++) {
+                    sensorHandler("endContact", this, this._touchedShapes[i]);
+                }
+            }
+        }, SensoredShape.prototype._updateCollisionGroup = function() {
+            this._collisionEnabled ? this._sensorEnabled ? this._setCollisionGroup(0) : this._setCollisionGroup(this._collisionGroup) : this._setCollisionGroup(0);
+        }, SensoredShape.prototype._updateCollisionMask = function() {
+            this._collisionEnabled ? this._sensorEnabled ? this._setCollisionMask(0) : this._setCollisionMask(this._collisionMask) : this._setCollisionMask(0);
+        }, Object.defineProperties(SensoredShape.prototype, prototypeAccessors$1), SensoredShape;
+    }(Shape), RigidBody = function(superclass) {
+        function RigidBody(rigidBodyConfig) {
+            superclass.call(this, rigidBodyConfig), this._emitter = new Emitter, this.userData = {
+                ref: null
+            };
+        }
+        return superclass && (RigidBody.__proto__ = superclass), RigidBody.prototype = Object.create(superclass && superclass.prototype), 
+        RigidBody.prototype.constructor = RigidBody, RigidBody.prototype.getObject = function() {
+            return this.userData.ref;
+        }, RigidBody.prototype.on = function(type, callback) {
+            this._emitter.on(type, callback);
+        }, RigidBody.prototype.off = function(type, callback) {
+            this._emitter.off(type, callback);
+        }, RigidBody.prototype.emit = function(type) {
+            for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
+                args[len] = arguments[len + 1];
+            }
+            (ref = this._emitter).cemit.apply(ref, [ type, this ].concat(args));
+        }, RigidBody.prototype.getSensoredShapeList = function() {
+            for (var res = [], shape = this.getShapeList(); shape; ) {
+                shape instanceof SensoredShape && res.push(shape), shape = shape.getNext();
+            }
+            return res;
+        }, RigidBody.prototype.addShape = function(shape) {
+            superclass.prototype.addShape.call(this, shape), shape instanceof SensoredShape && this.emit("sensoredShapeAdded", shape);
+        }, RigidBody.prototype.removeShape = function(shape) {
+            superclass.prototype.removeShape.call(this, shape), shape instanceof SensoredShape && this.emit("sensoredShapeRemoved", shape);
+        }, RigidBody.createStatic = function() {
+            var rigidBodyConfig = new OIMO$1.RigidBodyConfig;
+            return rigidBodyConfig.type = OIMO$1.RigidBodyType.STATIC, new RigidBody(rigidBodyConfig);
+        }, RigidBody.createDynamic = function() {
+            var rigidBodyConfig = new OIMO$1.RigidBodyConfig;
+            return rigidBodyConfig.type = OIMO$1.RigidBodyType.DYNAMIC, new RigidBody(rigidBodyConfig);
+        }, RigidBody.createKinematic = function() {
+            var rigidBodyConfig = new OIMO$1.RigidBodyConfig;
+            return rigidBodyConfig.type = OIMO$1.RigidBodyType.KINEMATIC, new RigidBody(rigidBodyConfig);
+        }, RigidBody;
+    }(OIMO$1.RigidBody), Sprite = function(Object2D) {
         function Sprite(texture) {
             Object2D.call(this, new THREE.Mesh), this._width = 0, this._height = 0, this._anchor = new Anchor(0, 0, 0, this), 
             this._material = new THREE.MeshBasicMaterial, this._material.transparent = !0, this._three.material = this._material, 
@@ -1124,7 +1224,8 @@
     exports.BodyRotation = BodyRotation, exports.Camera = Camera, exports.Container2D = Container2D, 
     exports.Container3D = Container3D, exports.Content = Content, exports.DisplayObject = DisplayObject, 
     exports.Mesh = Mesh, exports.Object2D = Object2D, exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, 
-    exports.PhysicsView = PhysicsView, exports.Sprite = Sprite, exports.View = View;
+    exports.PhysicsView = PhysicsView, exports.RigidBody = RigidBody, exports.SensoredShape = SensoredShape, 
+    exports.Shape = Shape, exports.Sprite = Sprite, exports.View = View;
 }(this.TLAP = this.TLAP || {}, THREE, {
     GLTFLoader: THREE.GLTFLoader
 });

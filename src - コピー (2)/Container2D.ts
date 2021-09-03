@@ -16,12 +16,7 @@ export class Container2D extends Object2D<THREE.Group> {
 		}
 	}
 	
-	updateBoundingBox() {
-		this._three.remove(this._sub);
-		for (let i = 0; i < this._children.length; i++) {
-			this._children[i].updateTransform();
-		}
-		super.updateBoundingBox();
-		this._three.add(this._sub)
+	updateTransform() {
+		this._updateMatrix();
 	}
 }

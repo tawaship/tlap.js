@@ -14,7 +14,5 @@ export * from './Object2D';
 export * from './Object3D';
 export * from './PhysicsObject3D';
 export * from './PhysicsView';
-export * from './RigidBody';
-export * from './Shape';
 export * from './Sprite';
 export * from './View';

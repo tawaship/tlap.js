@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no, minimal-ui">
+		<script src="../lib/three-r127.min.js"></script>
+		<script src="../lib/GLTFLoader-r127.js"></script>
+		<script src="../lib/OimoPhysics.min.js"></script>
+		<script src="../dist/tlap.js"></script>
+	</head>
+	<body style="width: 100%; margin: 0; overflow: hidden;">
+		<script>
+			const collisions = {
+				Wall: 0b0001,
+				Coin: 0b0010,
+				Hit: 0b0100
+			};
+			
+			class Board extends TLAP.PhysicsObject3D {
+				constructor() {
+					const width = 9;
+					const height = 1;
+					const depth = 10;
+					
+					const mesh = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, depth),
+						new THREE.MeshPhongMaterial({ color: 0xFFFFFF })
+					);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
+					sc.collisionGroup = collisions.Wall;
+					sc.collisionMask = collisions.Coin;
+					
+					const shape = new TLAP.Shape(sc);
+					
+					const body = TLAP.RigidBody.createStatic();
+					body.addShape(shape);
+					
+					super(mesh, body);
+				}
+			}
+			
+			class Wall extends TLAP.PhysicsObject3D {
+				constructor() {
+					const width = 2;
+					const height = 3;
+					const depth = 15;
+					
+					const mesh = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, depth),
+						new THREE.MeshPhongMaterial({ color: 0x0000FF })
+					);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
+					sc.collisionGroup = collisions.Wall;
+					sc.collisionMask = collisions.Coin;
+					
+					const shape = new TLAP.Shape(sc);
+					
+					const body = TLAP.RigidBody.createStatic();
+					body.addShape(shape);
+					
+					super(mesh, body);
+				}
+			}
+			
+			class Pusher extends TLAP.PhysicsObject3D {
+				constructor() {
+					const width = 9;
+					const height = 2;
+					const depth = 10;
+					
+					const mesh = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, depth),
+						new THREE.MeshPhongMaterial({ color: 0xFF0000 })
+					);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
+					sc.collisionGroup = collisions.Wall;
+					sc.collisionMask = collisions.Coin;
+					
+					const shape = new TLAP.Shape(sc);
+					
+					const body = TLAP.RigidBody.createKinematic();
+					body.addShape(shape);
+					
+					super(mesh, body);
+				}
+			}
+			
+			class Chucker extends TLAP.PhysicsObject3D {
+				constructor() {
+					const width = 1;
+					const height = 0.5;
+					const depth = 1;
+					const thickness = 0.05;
+					
+					const container = new THREE.Group();
+					
+					// 3方の壁 実際はmodel使うはず
+					const front = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, thickness),
+						new THREE.MeshPhongMaterial({ color: 0x000000 })
+					);
+					
+					const left = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, thickness),
+						new THREE.MeshPhongMaterial({ color: 0x000000 })
+					);
+					left.rotation.y = Math.PI / 180 * 90;
+					left.position.x = -width / 2;
+					left.position.z = -depth / 2;
+					
+					const right = new THREE.Mesh(
+						new THREE.BoxGeometry(width, height, thickness),
+						new THREE.MeshPhongMaterial({ color: 0x000000 })
+					);
+					right.rotation.y = Math.PI / 180 * -90;
+					right.position.x = width / 2;
+					right.position.z = -depth / 2;
+					
+					const sensor = new THREE.Mesh(
+						new THREE.BoxGeometry(width, depth, thickness),
+						new THREE.MeshPhongMaterial({ color: 0x999999, transparent: true, opacity: 0.1 })
+					);
+					sensor.rotation.x = Math.PI / 180 * 90;
+					sensor.position.z = -depth / 2;
+					
+					container.add(front);
+					container.add(left);
+					container.add(right);
+					container.add(sensor);
+					
+					let sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, thickness / 2));
+					sc.collisionGroup = collisions.Wall;
+					sc.collisionMask = collisions.Coin;
+					const frontShape = new TLAP.Shape(sc);
+					
+					sc.position.x = left.position.x;
+					sc.position.z = left.position.z;
+					sc.rotation.fromEulerXyz(new OIMO.Vec3(0, left.rotation.y, 0));
+					const leftShape = new TLAP.Shape(sc);
+					
+					sc.position.x = right.position.x;
+					sc.position.z = right.position.z;
+					sc.rotation.fromEulerXyz(new OIMO.Vec3(0, right.rotation.y, 0));
+					const rightShape = new TLAP.Shape(sc);
+					
+					sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, depth / 2, thickness / 2));
+					sc.collisionGroup = collisions.Wall;
+					sc.collisionMask = collisions.Coin;
+					sc.position.z = sensor.position.z;
+					sc.position.y = sensor.position.y;
+					sc.rotation.fromEulerXyz(new OIMO.Vec3( sensor.rotation.x, 0, 0));
+					const sensorShape = new TLAP.SensoredShape(sc);
+					
+					const body = TLAP.RigidBody.createKinematic();
+					body.addShape(frontShape);
+					body.addShape(leftShape);
+					body.addShape(rightShape);
+					body.addShape(sensorShape);
+					
+					super(container, body);
+					
+					sensorShape.on('beginContact', e => {
+						this.emit('chucker', e.hit.getObject());
+					});
+				}
+			}
+			
+			class Coin extends TLAP.PhysicsObject3D {
+				constructor(glb) {
+					const model = glb.clone();
+					
+					const vec3 = new THREE.Vector3();
+					
+					const box = new THREE.Box3().setFromObject(model);
+					const size = box.getSize(vec3);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.CylinderGeometry(size.x / 2, size.y / 2);
+					sc.collisionGroup = collisions.Coin;
+					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+					
+					const center = box.getCenter(vec3);
+					sc.position = new OIMO.Vec3(center.x, center.y, center.z);
+					
+					const shape = new TLAP.Shape(sc);
+					
+					const body = TLAP.RigidBody.createDynamic();
+					body.addShape(shape);
+					
+					super(model, body);
+					
+					this.touchedSensor = false;
+				}
+			}
+			
+			class TexturedCoin extends TLAP.PhysicsObject3D {
+				constructor(texture) {
+					const radiusTop = 0.3;
+					const radiusBottom = 0.3;
+					const height = 0.1;
+					const radialSegments = 32;
+					const heightSegments = 1;
+					
+					const mesh = new THREE.Mesh(
+						new THREE.CylinderGeometry(radiusTop, radiusBottom, height, radialSegments, heightSegments),
+						new THREE.MeshPhongMaterial({
+							map: texture
+						})
+					);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.CylinderGeometry(radiusTop, height / 2);
+					sc.collisionGroup = collisions.Coin;
+					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+					sc.position = new OIMO.Vec3(0, 0, 0);
+					
+					const shape = new TLAP.Shape(sc);
+					
+					const body = TLAP.RigidBody.createDynamic();
+					body.addShape(shape);
+					
+					super(mesh, body);
+					
+					this.touchedSensor = false;
+				}
+			}
+			
+			class Server extends TLAP.PhysicsObject3D {
+				constructor(_width) {
+					const width = _width;
+					const height = 5;
+					
+					const mesh = new THREE.Mesh(
+						new THREE.PlaneGeometry(width, height),
+						new THREE.MeshBasicMaterial({ color: 0x00FF00 })
+					);
+					mesh.geometry.rotateX(-Math.PI / 2);
+					
+					const sc = new OIMO.ShapeConfig();
+					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, 0.001, height / 2));
+					sc.collisionGroup = collisions.Hit;
+					sc.collisionMask = collisions.Coin;
+					
+					const shape = new TLAP.SensoredShape(sc);
+					
+					const body = TLAP.RigidBody.createKinematic();
+					body.addShape(shape);
+					
+					super(mesh, body);
+					
+					shape.on('endContact', e => {
+						this.emit('getCoin', e.hit.getObject());
+					});
+				}
+			}
+			
+			class MainView extends TLAP.PhysicsView {
+				constructor($) {
+					super();
+					
+					const camera = new THREE.PerspectiveCamera(40, $.width / $.height, 0.1, 1000);
+					camera.position.x = 0;
+					camera.position.y = 10;
+					camera.position.z = 15;
+					camera.lookAt(0, 0.6, 0);
+					
+					const viewport = { x: 0, y: 0, width: $.width, height: $.height };
+					
+					this.addCamera(new TLAP.Camera(camera, viewport));
+					
+					const light = new THREE.PointLight(0xFFFFFF);
+					light.position.set(0, 100, 50);
+					this.add(light);
+					
+					const al = new THREE.AmbientLight(0x666666);
+					this.add(al);
+					
+					const board = this.addChild(new Board());
+					
+					const wallL = this.addChild(new Wall());
+					wallL.x = -3.5;
+					wallL.y = 1;
+					wallL.z = -2.5;
+					
+					const wallR = this.addChild(new Wall());
+					wallR.x = 3.5;
+					wallR.y = 1.0;
+					wallR.z = -2.5;
+					
+					const pusher = this.addChild(new Pusher());
+					pusher.y = 0.5;
+					pusher.z = -5;
+					
+					const chucker = this.addChild(new Chucker());
+					chucker.y = 1;
+					chucker.z = 1;
+					chucker.on('chucker', object => {
+						if (object.touchedSensor) {
+							return;
+						}
+						
+						object.touchedSensor = true;
+						console.log('chucker in');
+					});
+					
+					const server = this.addChild(new Server(5));
+					server.y = -0.5;
+					server.z = 5;
+					server.on('getCoin', e => {
+						console.log('get coin')
+					});
+					
+					{
+						let rad = 0;
+						let rad2 = 0;
+						let ee = 0
+						pusher.task.add(e => {
+							rad += Math.PI / 180;
+							rad2 += Math.PI / 180 * 0.75
+							pusher.body.setLinearVelocity(new OIMO.Vec3(0, 0, Math.cos(rad) * 1.5));
+							chucker.body.setLinearVelocity(new OIMO.Vec3(Math.cos(rad2) * 1.5, 0, Math.cos(rad) * 1.5));
+							ee += e.delta;
+							
+							if (ee < 100) {
+								return;
+							}
+							
+							ee -= 100;
+							
+							const coin = this.addChild(new Coin($.resources.glbs.coin.scene, $.resources.textures.coin));
+							coin.position.set(Math.random() * 3 - 1.5, 4, -6);
+							
+							coin.on('pointertap', e => {
+								this.removeChild(coin);
+							});
+							coin.interactive = true;
+							
+							coin.body.applyImpulse(new OIMO.Vec3(0, 0, 0.1), coin.body.getPosition())
+							coin.body.applyTorque(new OIMO.Vec3(0.1, 0.1, 0.1), coin.body.getPosition())
+						});
+					}
+					
+					
+					for (let i = 0; i < 100; i++) {
+						const coin = this.addChild(new TexturedCoin($.resources.textures.coin));
+						coin.y = Math.random() * 5 + 1;
+						coin.x = Math.random() * 5 - 2.5;
+						coin.z = Math.random() * 10 - 5;
+						
+						coin.on('pointertap', e => {
+							this.removeChild(coin);
+						});
+						coin.interactive = true;
+					}
+				}
+			}
+			
+			class BackgroundView extends TLAP.View {
+				constructor($) {
+					super();
+					
+					const camera = new THREE.OrthographicCamera(-$.width / 2, $.width / 2, $.height / 2, -$.height / 2, 0.1, 200000000);
+					camera.position.x = 0;
+					camera.position.y = 0;
+					camera.position.z = 1000;
+					camera.lookAt(0, 0, 0);
+					
+					const viewport = { x: 0, y: 0, width: $.width, height: $.height };
+					
+					this.addCamera(new TLAP.Camera(camera, viewport));
+					
+					const light = new THREE.PointLight(0xFFFFFF);
+					light.position.set(0, 100, 50);
+					this.add(light);
+					
+					const mesh = this.addChild(new TLAP.Mesh(
+						new THREE.PlaneGeometry($.width, $.height),
+						new THREE.MeshBasicMaterial({ color: 0x000066 })
+					));
+					
+					mesh.x = -mesh.width / 2;
+					mesh.y = -mesh.height / 2;
+				}
+			}
+			
+			class UIView extends TLAP.View {
+				constructor($) {
+					super();
+					
+					const camera = new THREE.OrthographicCamera(-$.width / 2, $.width / 2, $.height / 2, -$.height / 2, 0.1, 200000000);
+					camera.position.x = 0;
+					camera.position.y = 0;
+					camera.position.z = 1000;
+					camera.lookAt(0, 0, 0);
+					
+					const viewport = { x: 0, y: 0, width: $.width, height: $.height };
+					
+					this.addCamera(new TLAP.Camera(camera, viewport));
+					
+					const container = this.addChild(new TLAP.Container2D());
+					
+					const reload = container.addChild(new TLAP.Sprite($.resources.textures.reload));
+					reload.on('pointertap', () => {
+						location.reload();
+					});
+					reload.interactive = true;
+					
+					reload.anchor.set(0.5);
+					reload.scale.set(100 / reload.width, 100 / reload.width);
+					
+					container.x = ($.width - reload.width) / 2;
+					container.y = ($.height - reload.height) / 2;
+				}
+				
+				addScore(score) {
+					this._scoreNum += score;
+					this._score.three.text = 'すこあ: ' + this._scoreNum;
+				}
+			}
+			
+			const app = new TLAP.Application({
+				width: 450,
+				height: 800,
+				resolution: 2,
+				autoAdjust: true,
+				antialias: true,
+				basepath: 'assets/',
+				version: 1
+			});
+			
+			const content = new TLAP.Content();
+			
+			content.defineTextures({
+				coin: 'coin.png',
+				reload: 'reload.png'
+			});
+			
+			content.defineGLBs({
+				coin: 'coin.glb'
+			});
+			
+			content.defineViews([
+				BackgroundView,
+				MainView,
+				UIView
+			]);
+			
+			app.fullScreen().attachAsync(content)
+				.then(() => {
+					app.play();
+				});
+		</script>
+	</body>
+</html>
