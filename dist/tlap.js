@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.1.1
+ * tlap.js - v0.1.3
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -985,10 +985,15 @@
         var prototypeAccessors = {
             world: {
                 configurable: !0
+            },
+            children: {
+                configurable: !0
             }
         };
         return prototypeAccessors.world.get = function() {
             return this._world;
+        }, prototypeAccessors.children.get = function() {
+            return this._children;
         }, PhysicsView.prototype.addChild = function(object) {
             View.prototype.addChild.call(this, object), this._world.addRigidBody(object.body);
             for (var sensoredShapes = object.body.getSensoredShapeList(), i = 0; i < sensoredShapes.length; i++) {

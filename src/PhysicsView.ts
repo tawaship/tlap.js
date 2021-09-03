@@ -10,6 +10,7 @@ export class PhysicsView extends View {
 	private _sensoredShapes: SensoredShape[] = [];
 	private _onShapeAdded: (shape: SensoredShape) => void;
 	private _onShapeRemoved: (shape: SensoredShape) => void;
+	declare protected _children: PhysicsObject3D[];
 	physicsEnabled: boolean = true;
 	
 	constructor() {
@@ -35,6 +36,10 @@ export class PhysicsView extends View {
 	
 	get world() {
 		return this._world;
+	}
+	
+	get children() {
+		return this._children;
 	}
 	
 	addChild(object: PhysicsObject3D) {
