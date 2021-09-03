@@ -29,15 +29,19 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
-					sc.collisionGroup = collisions.Wall;
-					sc.collisionMask = collisions.Coin;
 					
-					const shape = new TLAP.Shape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createStatic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.STATIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(mesh, body);
+					
+					this.collisionGroup = collisions.Wall;
+					this.collisionMask = collisions.Coin;
 				}
 			}
 			
@@ -54,15 +58,19 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
-					sc.collisionGroup = collisions.Wall;
-					sc.collisionMask = collisions.Coin;
 					
-					const shape = new TLAP.Shape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createStatic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.STATIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(mesh, body);
+					
+					this.collisionGroup = collisions.Wall;
+					this.collisionMask = collisions.Coin;
 				}
 			}
 			
@@ -79,97 +87,19 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, depth / 2));
-					sc.collisionGroup = collisions.Wall;
-					sc.collisionMask = collisions.Coin;
 					
-					const shape = new TLAP.Shape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createKinematic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.KINEMATIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(mesh, body);
-				}
-			}
-			
-			class Chucker extends TLAP.PhysicsObject3D {
-				constructor() {
-					const width = 1;
-					const height = 0.5;
-					const depth = 1;
-					const thickness = 0.05;
 					
-					const container = new THREE.Group();
-					
-					// 3方の壁 実際はmodel使うはず
-					const front = new THREE.Mesh(
-						new THREE.BoxGeometry(width, height, thickness),
-						new THREE.MeshPhongMaterial({ color: 0x000000 })
-					);
-					
-					const left = new THREE.Mesh(
-						new THREE.BoxGeometry(width, height, thickness),
-						new THREE.MeshPhongMaterial({ color: 0x000000 })
-					);
-					left.rotation.y = Math.PI / 180 * 90;
-					left.position.x = -width / 2;
-					left.position.z = -depth / 2;
-					
-					const right = new THREE.Mesh(
-						new THREE.BoxGeometry(width, height, thickness),
-						new THREE.MeshPhongMaterial({ color: 0x000000 })
-					);
-					right.rotation.y = Math.PI / 180 * -90;
-					right.position.x = width / 2;
-					right.position.z = -depth / 2;
-					
-					const sensor = new THREE.Mesh(
-						new THREE.BoxGeometry(width, depth, thickness),
-						new THREE.MeshPhongMaterial({ color: 0x999999, transparent: true, opacity: 0.1 })
-					);
-					sensor.rotation.x = Math.PI / 180 * 90;
-					sensor.position.z = -depth / 2;
-					
-					container.add(front);
-					container.add(left);
-					container.add(right);
-					container.add(sensor);
-					
-					let sc = new OIMO.ShapeConfig();
-					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, height / 2, thickness / 2));
-					sc.collisionGroup = collisions.Wall;
-					sc.collisionMask = collisions.Coin;
-					const frontShape = new TLAP.Shape(sc);
-					
-					sc.position.x = left.position.x;
-					sc.position.z = left.position.z;
-					sc.rotation.fromEulerXyz(new OIMO.Vec3(0, left.rotation.y, 0));
-					const leftShape = new TLAP.Shape(sc);
-					
-					sc.position.x = right.position.x;
-					sc.position.z = right.position.z;
-					sc.rotation.fromEulerXyz(new OIMO.Vec3(0, right.rotation.y, 0));
-					const rightShape = new TLAP.Shape(sc);
-					
-					sc = new OIMO.ShapeConfig();
-					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, depth / 2, thickness / 2));
-					sc.collisionGroup = collisions.Wall;
-					sc.collisionMask = collisions.Coin;
-					sc.position.z = sensor.position.z;
-					sc.position.y = sensor.position.y;
-					sc.rotation.fromEulerXyz(new OIMO.Vec3( sensor.rotation.x, 0, 0));
-					const sensorShape = new TLAP.SensoredShape(sc);
-					
-					const body = TLAP.RigidBody.createKinematic();
-					body.addShape(frontShape);
-					body.addShape(leftShape);
-					body.addShape(rightShape);
-					body.addShape(sensorShape);
-					
-					super(container, body);
-					
-					sensorShape.on('beginContact', e => {
-						this.emit('chucker', e.hit.getObject());
-					});
+					this.collisionGroup = collisions.Wall;
+					this.collisionMask = collisions.Coin;
 				}
 			}
 			
@@ -184,20 +114,26 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.CylinderGeometry(size.x / 2, size.y / 2);
-					sc.collisionGroup = collisions.Coin;
-					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
 					
 					const center = box.getCenter(vec3);
 					sc.position = new OIMO.Vec3(center.x, center.y, center.z);
 					
-					const shape = new TLAP.Shape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createDynamic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.DYNAMIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(model, body);
 					
-					this.touchedSensor = false;
+					this.collisionGroup = collisions.Coin;
+					this.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+				}
+				
+				hitServer() {
+					this._body.getShapeList().setCollisionMask(collisions.Wall | collisions.Coin);
 				}
 			}
 			
@@ -218,18 +154,25 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.CylinderGeometry(radiusTop, height / 2);
-					sc.collisionGroup = collisions.Coin;
-					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+					
 					sc.position = new OIMO.Vec3(0, 0, 0);
 					
-					const shape = new TLAP.Shape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createDynamic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.DYNAMIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(mesh, body);
 					
-					this.touchedSensor = false;
+					this.collisionGroup = collisions.Coin;
+					this.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+				}
+				
+				hitServer() {
+					this._body.getShapeList().setCollisionMask(collisions.Wall | collisions.Coin);
 				}
 			}
 			
@@ -246,19 +189,21 @@
 					
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.BoxGeometry(new OIMO.Vec3(width / 2, 0.001, height / 2));
-					sc.collisionGroup = collisions.Hit;
-					sc.collisionMask = collisions.Coin;
 					
-					const shape = new TLAP.SensoredShape(sc);
+					const shape = new OIMO.Shape(sc);
 					
-					const body = TLAP.RigidBody.createKinematic();
+					const config = new OIMO.RigidBodyConfig();
+					config.type = OIMO.RigidBodyType.KINEMATIC;
+					
+					const body = new OIMO.RigidBody(config);
 					body.addShape(shape);
 					
 					super(mesh, body);
 					
-					shape.on('endContact', e => {
-						this.emit('getCoin', e.hit.getObject());
-					});
+					this.contactEnabled = true
+					this.isSensor = true;
+					this.collisionGroup = collisions.Hit;
+					this.collisionMask = collisions.Coin;
 				}
 			}
 			
@@ -299,55 +244,38 @@
 					pusher.y = 0.5;
 					pusher.z = -5;
 					
-					const chucker = this.addChild(new Chucker());
-					chucker.y = 1;
-					chucker.z = 1;
-					chucker.on('chucker', object => {
-						if (object.touchedSensor) {
-							return;
-						}
-						
-						object.touchedSensor = true;
-						console.log('chucker in');
-					});
-					
 					const server = this.addChild(new Server(5));
 					server.y = -0.5;
 					server.z = 5;
-					server.on('getCoin', e => {
+					server.on('endContact', e => {
 						console.log('get coin')
 					});
 					
-					{
-						let rad = 0;
-						let rad2 = 0;
-						let ee = 0
-						pusher.task.add(e => {
-							rad += Math.PI / 180;
-							rad2 += Math.PI / 180 * 0.75
-							pusher.body.setLinearVelocity(new OIMO.Vec3(0, 0, Math.cos(rad) * 1.5));
-							chucker.body.setLinearVelocity(new OIMO.Vec3(Math.cos(rad2) * 1.5, 0, Math.cos(rad) * 1.5));
-							ee += e.delta;
-							
-							if (ee < 100) {
-								return;
-							}
-							
-							ee -= 100;
-							
-							const coin = this.addChild(new Coin($.resources.glbs.coin.scene, $.resources.textures.coin));
-							coin.position.set(Math.random() * 3 - 1.5, 4, -6);
-							
-							coin.on('pointertap', e => {
-								this.removeChild(coin);
-							});
-							coin.interactive = true;
-							
-							coin.body.applyImpulse(new OIMO.Vec3(0, 0, 0.1), coin.body.getPosition())
-							coin.body.applyTorque(new OIMO.Vec3(0.1, 0.1, 0.1), coin.body.getPosition())
-						});
-					}
+					let rad = 0;
+					let ee = 0
 					
+					pusher.task.add(e => {
+						rad += Math.PI / 180;
+						pusher.body.setLinearVelocity(new OIMO.Vec3(0, 0, Math.cos(rad) * 1.5));
+						ee += e.delta;
+						
+						if (ee < 100) {
+							return;
+						}
+						
+						ee -= 100;
+						
+						const coin = this.addChild(new Coin($.resources.glbs.coin.scene, $.resources.textures.coin));
+						coin.position.set(Math.random() * 3 - 1.5, 4, -6);
+						
+						coin.on('pointertap', e => {
+							this.removeChild(coin);
+						});
+						coin.interactive = true;
+						
+						coin.body.applyImpulse(new OIMO.Vec3(0, 0, 0.1), coin.body.getPosition())
+						coin.body.applyTorque(new OIMO.Vec3(0.1, 0.1, 0.1), coin.body.getPosition())
+					})
 					
 					for (let i = 0; i < 100; i++) {
 						const coin = this.addChild(new TexturedCoin($.resources.textures.coin));

@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.0.1
+ * tlap.js - v0.1.0
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
