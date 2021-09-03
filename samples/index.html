@@ -251,7 +251,7 @@
 					
 					const shape = new TLAP.SensoredShape(sc);
 					
-					const body = TLAP.RigidBody.createKinematic();
+					const body = TLAP.RigidBody.createStatic();
 					body.addShape(shape);
 					
 					super(mesh, body);

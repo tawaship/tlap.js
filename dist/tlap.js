@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.1.0
+ * tlap.js - v0.1.1
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -1019,10 +1019,7 @@
                 c[i$1].update(e);
             }
         }, Object.defineProperties(PhysicsView.prototype, prototypeAccessors), PhysicsView;
-    }(View), event = {
-        hit: null,
-        originalEvent: null
-    }, contactCallback = new OIMO$1.ContactCallback;
+    }(View), contactCallback = new OIMO$1.ContactCallback;
     function contactHandler(type, e) {
         var selfShape = e.getShape1(), opponentShape = e.getShape2();
         event.originalEvent = e, event.hit = opponentShape, selfShape.emit(type, event);
@@ -1100,7 +1097,10 @@
                 return body.getObject();
             }
         }, Object.defineProperties(Shape.prototype, prototypeAccessors), Shape;
-    }(OIMO$1.Shape);
+    }(OIMO$1.Shape), event = {
+        hit: new Shape(new OIMO$1.ShapeConfig),
+        originalEvent: null
+    };
     function sensorHandler(type, selfShape, opponentShape) {
         event.originalEvent = null, event.hit = opponentShape, selfShape.emit(type, event);
     }

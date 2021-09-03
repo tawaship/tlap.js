@@ -4,14 +4,9 @@ import { RigidBody } from './RigidBody';
 import { Emitter, IEmitterDelegate } from '@tawaship/emitter';
 
 export interface IContactData {
-	hit: Shape | null;
+	hit: Shape;
 	originalEvent: any;
 }
-
-/**
- * @ignore
- */
-const event: IContactData = { hit: null, originalEvent: null };
 
 /**
  * @ignore
@@ -150,6 +145,11 @@ export class Shape extends OIMO.Shape {
 		return body.getObject();
 	}
 }
+
+/**
+ * @ignore
+ */
+const event: IContactData = { hit: new Shape(new OIMO.ShapeConfig()), originalEvent: null };
 
 /**
  * @ignore
