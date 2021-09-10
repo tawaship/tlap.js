@@ -32,18 +32,18 @@ export default (async () => {
 			output: [
 				{
 					banner,
-					file: 'dist/pixi-animate-container.cjs.js',
+					file: 'dist/tlap.cjs.js',
 					format: 'cjs',
 					sourcemap: true
 				},
 				{
 					banner,
-					file: 'dist/pixi-animate-container.esm.js',
+					file: 'dist/tlap.esm.js',
 					format: 'esm',
 					sourcemap: true
 				}
 			],
-			external: ['pixi.js', '@tawaship/createjs-module'],
+			external: ['three', 'three/examples/jsm/loaders/GLTFLoader'],
 			watch: {
 				clearScreen: false
 			},

@@ -2,8 +2,8 @@
   "name": "@tawaship/tlap.js",
   "version": "0.1.5",
   "description": "",
-  "main": "dist/tlap.js.cjs.js",
-  "module": "dist/tlap.js.esm.js",
+  "main": "dist/tlap.cjs.js",
+  "module": "dist/tlap.esm.js",
   "types": "types/index.d.ts",
   "directories": {
     "doc": "docs",
