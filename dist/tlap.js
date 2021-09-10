@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.1.4
+ * tlap.js - v0.1.5
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -905,6 +905,18 @@
             return this._rotation;
         }, PhysicsObject3D.prototype.updateTransform = function() {
             this._three.position.copy(this._body.getPosition()), this._three.quaternion.copy(this._body.getOrientation());
+        }, PhysicsObject3D.prototype.setCollisionGroup = function(collisionGroup) {
+            this._body.setCollisionGroup(collisionGroup);
+        }, PhysicsObject3D.prototype.addCollisionGroup = function(collisionGroup) {
+            this._body.addCollisionGroup(collisionGroup);
+        }, PhysicsObject3D.prototype.removeCollisionGroup = function(collisionGroup) {
+            this._body.removeCollisionGroup(collisionGroup);
+        }, PhysicsObject3D.prototype.setCollisionMask = function(collisionMask) {
+            this._body.setCollisionMask(collisionMask);
+        }, PhysicsObject3D.prototype.addCollisionMask = function(collisionMask) {
+            this._body.addCollisionMask(collisionMask);
+        }, PhysicsObject3D.prototype.removeCollisionMask = function(collisionMask) {
+            this._body.removeCollisionMask(collisionMask);
         }, Object.defineProperties(PhysicsObject3D.prototype, prototypeAccessors), PhysicsObject3D;
     }(Object3D), View = function(Object3D) {
         function View($) {
@@ -1091,8 +1103,16 @@
             this._contactEnabled = value, value ? this.setContactCallback(contactCallback) : this.setContactCallback(null);
         }, Shape.prototype.setCollisionGroup = function(collisionGroup) {
             this._collisionGroup = collisionGroup, this._updateCollisionGroup();
+        }, Shape.prototype.addCollisionGroup = function(collisionGroup) {
+            this._collisionGroup |= collisionGroup, this._updateCollisionGroup();
+        }, Shape.prototype.removeCollisionGroup = function(collisionGroup) {
+            this._collisionGroup ^= this._collisionGroup & collisionGroup, this._updateCollisionGroup();
         }, Shape.prototype.setCollisionMask = function(collisionMask) {
             this._collisionMask = collisionMask, this._updateCollisionMask();
+        }, Shape.prototype.addCollisionMask = function(collisionMask) {
+            this._collisionMask |= collisionMask, this._updateCollisionMask();
+        }, Shape.prototype.removeCollisionMask = function(collisionMask) {
+            this._collisionMask ^= this._collisionMask & collisionMask, this._updateCollisionMask();
         }, Shape.prototype._setCollisionGroup = function(collisionGroup) {
             superclass.prototype.setCollisionGroup.call(this, collisionGroup);
         }, Shape.prototype._setCollisionMask = function(collisionMask) {
@@ -1182,6 +1202,34 @@
             superclass.prototype.addShape.call(this, shape), shape instanceof SensoredShape && this.emit("sensoredShapeAdded", shape);
         }, RigidBody.prototype.removeShape = function(shape) {
             superclass.prototype.removeShape.call(this, shape), shape instanceof SensoredShape && this.emit("sensoredShapeRemoved", shape);
+        }, RigidBody.prototype.setCollisionGroup = function(collisionGroup) {
+            for (var shape = this.getShapeList(); shape; ) {
+                shape.setCollisionGroup(collisionGroup), shape = shape.getNext();
+            }
+        }, RigidBody.prototype.addCollisionGroup = function(collisionGroup) {
+            for (var shape = this.getShapeList(); shape; ) {
+                var t = shape.getCollisionGroup();
+                t |= collisionGroup, shape.setCollisionGroup(t), shape = shape.getNext();
+            }
+        }, RigidBody.prototype.removeCollisionGroup = function(collisionGroup) {
+            for (var shape = this.getShapeList(); shape; ) {
+                var t = shape.getCollisionGroup();
+                t ^= t & collisionGroup, shape.setCollisionGroup(t), shape = shape.getNext();
+            }
+        }, RigidBody.prototype.setCollisionMask = function(collisionMask) {
+            for (var shape = this.getShapeList(); shape; ) {
+                shape.setCollisionMask(collisionMask), shape = shape.getNext();
+            }
+        }, RigidBody.prototype.addCollisionMask = function(collisionMask) {
+            for (var shape = this.getShapeList(); shape; ) {
+                var t = shape.getCollisionMask();
+                t |= collisionMask, shape.setCollisionMask(t), shape = shape.getNext();
+            }
+        }, RigidBody.prototype.removeCollisionMask = function(collisionMask) {
+            for (var shape = this.getShapeList(); shape; ) {
+                var t = shape.getCollisionMask();
+                t ^= t & collisionMask, shape.setCollisionMask(t), shape = shape.getNext();
+            }
         }, RigidBody.createStatic = function() {
             var rigidBodyConfig = new OIMO$1.RigidBodyConfig;
             return rigidBodyConfig.type = OIMO$1.RigidBodyType.STATIC, new RigidBody(rigidBodyConfig);

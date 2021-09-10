@@ -106,8 +106,32 @@ export class Shape extends OIMO.Shape {
 		this._updateCollisionGroup();
 	}
 	
+	addCollisionGroup(collisionGroup: number) {
+		this._collisionGroup |= collisionGroup;
+		
+		this._updateCollisionGroup();
+	}
+	
+	removeCollisionGroup(collisionGroup: number) {
+		this._collisionGroup ^= this._collisionGroup & collisionGroup;
+		
+		this._updateCollisionGroup();
+	}
+	
 	setCollisionMask(collisionMask: number) {
 		this._collisionMask = collisionMask;
+		
+		this._updateCollisionMask();
+	}
+	
+	addCollisionMask(collisionMask: number) {
+		this._collisionMask |= collisionMask;
+		
+		this._updateCollisionMask();
+	}
+	
+	removeCollisionMask(collisionMask: number) {
+		this._collisionMask ^= this._collisionMask & collisionMask;
 		
 		this._updateCollisionMask();
 	}

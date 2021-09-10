@@ -3,8 +3,6 @@ import { Shape, SensoredShape } from './Shape';
 import { PhysicsObject3D } from './PhysicsObject3D';
 import { Emitter, IEmitterDelegate } from '@tawaship/emitter';
 
-export type TShape = Shape | SensoredShape;
-
 export class RigidBody extends OIMO.RigidBody {
 	private _emitter: Emitter = new Emitter();
 	
@@ -32,7 +30,7 @@ export class RigidBody extends OIMO.RigidBody {
 		this._emitter.cemit(type, this, ...args);
 	}
 	
-	getSensoredShapeList(): TShape[] {
+	getSensoredShapeList(): SensoredShape[] {
 		const res: SensoredShape[] = [];
 		
 		let shape = this.getShapeList();
@@ -59,6 +57,68 @@ export class RigidBody extends OIMO.RigidBody {
 		
 		if (shape instanceof SensoredShape) {
 			this.emit('sensoredShapeRemoved', shape);
+		}
+	}
+	
+	setCollisionGroup(collisionGroup: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			shape.setCollisionGroup(collisionGroup);
+			
+			shape = shape.getNext();
+		}
+	}
+	
+	addCollisionGroup(collisionGroup: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			let t = shape.getCollisionGroup();
+			t |= collisionGroup;
+			shape.setCollisionGroup(t);
+			
+			shape = shape.getNext();
+		}
+	}
+	
+	removeCollisionGroup(collisionGroup: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			let t = shape.getCollisionGroup();
+			t ^= t & collisionGroup;
+			shape.setCollisionGroup(t);
+			
+			shape = shape.getNext();
+		}
+	}
+	
+	setCollisionMask(collisionMask: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			shape.setCollisionMask(collisionMask);
+			
+			shape = shape.getNext();
+		}
+	}
+	
+	addCollisionMask(collisionMask: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			let t = shape.getCollisionMask();
+			t |= collisionMask;
+			shape.setCollisionMask(t);
+			
+			shape = shape.getNext();
+		}
+	}
+	
+	removeCollisionMask(collisionMask: number) {
+		let shape = this.getShapeList();
+		while (shape) {
+			let t = shape.getCollisionMask();
+			t ^= t & collisionMask;
+			shape.setCollisionMask(t);
+			
+			shape = shape.getNext();
 		}
 	}
 	

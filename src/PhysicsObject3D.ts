@@ -61,4 +61,28 @@ export class PhysicsObject3D extends Object3D<THREE.Object3D> {
 		this._three.position.copy(this._body.getPosition());
 		this._three.quaternion.copy(this._body.getOrientation());
 	}
+	
+	setCollisionGroup(collisionGroup: number) {
+		this._body.setCollisionGroup(collisionGroup);
+	}
+	
+	addCollisionGroup(collisionGroup: number) {
+		this._body.addCollisionGroup(collisionGroup);
+	}
+	
+	removeCollisionGroup(collisionGroup: number) {
+		this._body.removeCollisionGroup(collisionGroup);
+	}
+	
+	setCollisionMask(collisionMask: number) {
+		this._body.setCollisionMask(collisionMask);
+	}
+	
+	addCollisionMask(collisionMask: number) {
+		this._body.addCollisionMask(collisionMask);
+	}
+	
+	removeCollisionMask(collisionMask: number) {
+		this._body.removeCollisionMask(collisionMask);
+	}
 }

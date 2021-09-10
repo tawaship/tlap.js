@@ -13,7 +13,8 @@
 			const collisions = {
 				Wall: 0b0001,
 				Coin: 0b0010,
-				Hit: 0b0100
+				Hit: 0b0100,
+				Chucker: 0b1000
 			};
 			
 			class Board extends TLAP.PhysicsObject3D {
@@ -185,7 +186,7 @@
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.CylinderGeometry(size.x / 2, size.y / 2);
 					sc.collisionGroup = collisions.Coin;
-					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit | collisions.Chucker;
 					
 					const center = box.getCenter(vec3);
 					sc.position = new OIMO.Vec3(center.x, center.y, center.z);
@@ -196,8 +197,6 @@
 					body.addShape(shape);
 					
 					super(model, body);
-					
-					this.touchedSensor = false;
 				}
 			}
 			
@@ -219,7 +218,7 @@
 					const sc = new OIMO.ShapeConfig();
 					sc.geometry = new OIMO.CylinderGeometry(radiusTop, height / 2);
 					sc.collisionGroup = collisions.Coin;
-					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit;
+					sc.collisionMask = collisions.Wall | collisions.Coin | collisions.Hit | collisions.Chucker;
 					sc.position = new OIMO.Vec3(0, 0, 0);
 					
 					const shape = new TLAP.Shape(sc);
@@ -228,8 +227,6 @@
 					body.addShape(shape);
 					
 					super(mesh, body);
-					
-					this.touchedSensor = false;
 				}
 			}
 			
@@ -303,11 +300,7 @@
 					chucker.y = 1;
 					chucker.z = 1;
 					chucker.on('chucker', object => {
-						if (object.touchedSensor) {
-							return;
-						}
-						
-						object.touchedSensor = true;
+						object.removeCollisionMask(collisions.Chucker);
 						console.log('chucker in');
 					});
 					
@@ -359,6 +352,7 @@
 							this.removeChild(coin);
 						});
 						coin.interactive = true;
+						
 					}
 				}
 			}
