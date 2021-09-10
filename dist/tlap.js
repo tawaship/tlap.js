@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.1.3
+ * tlap.js - v0.1.4
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -199,6 +199,9 @@
             autoAdjust(this$1);
         });
     }, prototypeAccessors$1 = {
+        renderer: {
+            configurable: !0
+        },
         element: {
             configurable: !0
         },
@@ -227,6 +230,8 @@
             }
             return this$1;
         }));
+    }, prototypeAccessors$1.renderer.get = function() {
+        return this._renderer;
     }, prototypeAccessors$1.element.get = function() {
         return this._renderer.domElement;
     }, prototypeAccessors$1.width.get = function() {

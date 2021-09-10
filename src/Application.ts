@@ -315,6 +315,10 @@ export class Application {
 			});
 	}
 	
+	get renderer() {
+		return this._renderer;
+	}
+	
 	get element() {
 		return this._renderer.domElement;
 	}

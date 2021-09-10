@@ -432,19 +432,19 @@
 				resolution: 2,
 				autoAdjust: true,
 				antialias: true,
-				basepath: 'assets/',
+				basepath: './',
 				version: 1
 			});
 			
 			const content = new TLAP.Content();
 			
 			content.defineTextures({
-				coin: 'coin.png',
-				reload: 'reload.png'
+				coin: 'assets/coin.png',
+				reload: 'assets/reload.png'
 			});
 			
 			content.defineGLBs({
-				coin: 'coin.glb'
+				coin: 'assets/coin.glb'
 			});
 			
 			content.defineViews([
@@ -456,6 +456,7 @@
 			app.fullScreen().attachAsync(content)
 				.then(() => {
 					app.play();
+					app.renderer.outputEncoding = THREE.sRGBEncoding;
 				});
 		</script>
 	</body>
