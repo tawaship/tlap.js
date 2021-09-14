@@ -2,12 +2,6 @@ import * as THREE from 'three';
 import { Emitter } from '@tawaship/emitter';
 import { Task } from '@tawaship/task';
 
-export interface IInteractionEvent extends THREE.Event {
-	type: string;
-	emitted: DisplayObject[];
-	originalEvent: Event | null;
-};
-
 export interface ITickerData {
 	delta: number;
 }

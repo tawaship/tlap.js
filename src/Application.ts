@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import isMobile from 'ismobilejs';
 import { View } from './View';
-import { DisplayObject, IInteractionEvent, ITickerData } from './DisplayObject';
+import { DisplayObject, ITickerData } from './DisplayObject';
+import { InteractionManager, IInteractionEvent } from './InteractionManager';
 import { Content } from './Content';
 import { IDeliverData } from './IDeliverData';
 
@@ -17,6 +18,7 @@ export interface IApplicationOption {
 	autoAdjust?: TAutoAdjust;
 	basepath?: string;
 	version?: string;
+	interactionCanvas?: HTMLCanvasElement;
 }
 
 export interface IAdjustDelegate {
@@ -63,10 +65,7 @@ export class Application {
 	private _autoAdjuster: TAutoAdjuster = null;
 	private _basepath: string = '';
 	private _version: string = '';
-	
-	interactionDown: boolean = true;
-	interactionMove: boolean = false;
-	interactionUp: boolean = true;
+	private _interactionManager = new InteractionManager();
 	
 	constructor(options: IApplicationOption = {}) {
 		const canvas = options.canvas || undefined;
@@ -99,26 +98,13 @@ export class Application {
 		this._basepath = basepath;
 		this._version = version;
 		
-		const dom = renderer.domElement;
-		dom.style.position = 'absolute';
-		const isSP = isMobile(navigator.userAgent).any;
+		renderer.domElement.style.position = 'absolute';
 		
 		const raycaster = new THREE.Raycaster();
-		const mouse = new THREE.Vector2();
-		const event: IInteractionEvent = { type: '', emitted: [], originalEvent: null };
-		let down: DisplayObject[] = [];
-		let over: DisplayObject[] = [];
 		
-		const cast = (e: Event, x: number, y: number) => {
-			event.originalEvent = e;
-			event.emitted = [];
-			
-			const w = dom.offsetWidth;
-			const h = dom.offsetHeight;
-			
-			mouse.x = (x / w) * 2 - 1;
-			mouse.y = -(y / h) * 2 + 1;
-			
+		this._interactionManager.addCanvas(renderer.domElement);
+		
+		this._interactionManager.on('cast', (event: IInteractionEvent, mouse: THREE.Vector2) => {
 			const c = this._views;
 			for (let i = c.length - 1; i >= 0; i--) {
 				if (event.emitted.length > 0) {
@@ -127,141 +113,7 @@ export class Application {
 				
 				c[i].onInteraction(event, raycaster, mouse);
 			}
-		};
-		
-		const dispatch = (targets: DisplayObject[], type: string) => {
-			for (let i = 0; i < targets.length; i++) {
-				targets[i].emit(type, event);
-			}
-		};
-		
-		const separate = (_first: DisplayObject[], _emitted: DisplayObject[]) => {
-			const first: DisplayObject[] = _first.concat([]);
-			const emitted: DisplayObject[] = _emitted.concat([]);
-			const both: DisplayObject[] = [];
-			
-			for (let i = first.length - 1; i >= 0; i--) {
-				const p = first[i];
-				const index = emitted.indexOf(p);
-				
-				if (index > -1) {
-					first.splice(i, 1);
-					emitted.splice(index, 1);
-					both.push(p);
-				}
-			}
-			
-			return { both, first, emitted };
-		}
-		
-		const startHandler = (e: Event, x: number, y: number) => {
-			down = [];
-			if (!this.interactionDown) {
-				return;
-			}
-			
-			event.type = 'system:interaction:pointerdown';
-			cast(e, x, y);
-			
-			if (event.emitted.length === 0) {
-				return;
-			}
-			
-			dispatch(event.emitted, 'pointerdown');
-			down = event.emitted;
-		};
-		
-		const moveHandler = (e: Event, x: number, y: number) => {
-			if (!this.interactionMove) {
-				return;
-			}
-			
-			event.type = 'system:interaction:pointermove';
-			cast(e, x, y);
-			
-			if (over.length === 0) {
-				if (event.emitted.length > 0) {
-					dispatch(event.emitted, 'pointerover');
-					over = event.emitted;
-				}
-				
-				return;
-			}
-			
-			if (event.emitted.length === 0) {
-				dispatch(over, 'pointerout');
-				over = [];
-				
-				return;
-			}
-			
-			const saparated = separate(over, event.emitted);
-			
-			dispatch(saparated.emitted, 'pointerover');
-			dispatch(saparated.first, 'pointerout');
-			over = event.emitted;
-			
-			dispatch(saparated.both, 'pointermove');
-		}
-		
-		const endHandler = (e: Event, x: number, y: number) => {
-			if (!this.interactionUp) {
-				return;
-			}
-			
-			event.type = 'system:interaction:pointerup';
-			cast(e, x, y);
-			
-			if (down.length === 0) {
-				if (event.emitted.length > 0) {
-					dispatch(event.emitted, 'pointerup');
-				}
-				
-				return;
-			}
-			
-			if (event.emitted.length === 0) {
-				dispatch(down, 'pointerupoutside');
-				down = [];
-				
-				return;
-			}
-			
-			const saparated = separate(down, event.emitted);
-			
-			dispatch(saparated.emitted, 'pointerup');
-			dispatch(saparated.first, 'pointerupoutside');
-			
-			dispatch(saparated.both, 'pointerup');
-			dispatch(saparated.both, 'pointertap');
-			down = [];
-		}
-		
-		if (isSP) {
-			dom.addEventListener('touchstart', e => {
-				startHandler(e, e.touches[0].clientX - dom.offsetLeft, e.touches[0].clientY - dom.offsetTop);
-			});
-			
-			dom.addEventListener('touchmove', e => {
-				moveHandler(e, e.touches[0].clientX - dom.offsetLeft, e.touches[0].clientY - dom.offsetTop);
-			});
-			
-			dom.addEventListener('touchend', e => {
-				endHandler(e, e.changedTouches[0].clientX - dom.offsetLeft, e.changedTouches[0].clientY - dom.offsetTop);
-			});
-		} else {
-			dom.addEventListener('mousedown', e => {
-				startHandler(e, e.offsetX, e.offsetY);
-			});
-			
-			dom.addEventListener('mousemove', e => {
-				moveHandler(e, e.offsetX, e.offsetY);
-			});
-			
-			dom.addEventListener('mouseup', e => {
-				endHandler(e, e.offsetX, e.offsetY);
-			});
-		}
+		});
 		
 		window.addEventListener('visibilitychange', e => {
 			this._lastTime = e.timeStamp;
@@ -317,6 +169,10 @@ export class Application {
 	
 	get renderer() {
 		return this._renderer;
+	}
+	
+	get interactionManager() {
+		return this._interactionManager;
 	}
 	
 	get element() {

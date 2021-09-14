@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { Object3D } from './Object3D';
 import { Camera } from './Camera';
-import { IInteractionEvent, ITickerData } from './DisplayObject';
+import { IInteractionEvent } from './InteractionManager';
+import { ITickerData } from './DisplayObject';
 import { IDeliverData } from './IDeliverData';
 
 export class View extends Object3D<THREE.Scene> {

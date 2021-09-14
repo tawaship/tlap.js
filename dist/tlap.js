@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.1.5
+ * tlap.js - v0.2.0
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -39,11 +39,243 @@
     var appleIphone = /iPhone/i, appleIpod = /iPod/i, appleTablet = /iPad/i, appleUniversal = /\biOS-universal(?:.+)Mac\b/i, androidPhone = /\bAndroid(?:.+)Mobile\b/i, androidTablet = /Android/i, amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i, amazonTablet = /Silk/i, windowsPhone = /Windows Phone/i, windowsTablet = /\bWindows(?:.+)ARM\b/i, otherBlackBerry = /BlackBerry/i, otherBlackBerry10 = /BB10/i, otherOpera = /Opera Mini/i, otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i, otherFirefox = /Mobile(?:.+)Firefox\b/i, isAppleTabletOnIos13 = function(navigator) {
         return void 0 !== navigator && "MacIntel" === navigator.platform && "number" == typeof navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && "undefined" == typeof MSStream;
     };
-    var Application = function(options) {
+    /*!
+     * @tawaship/emitter - v3.1.1
+     * 
+     * @author tawaship (makazu.mori@gmail.com)
+     * @license MIT
+     */
+    var Emitter = function() {
+        this._events = {};
+    };
+    Emitter.prototype._on = function(type, callback, once) {
+        if (!type || !callback) {
+            return this;
+        }
+        for (var events = this._events[type] = this._events[type] || [], i = 0; i < events.length; i++) {
+            if (events[i].callback === callback) {
+                return this;
+            }
+        }
+        return events.push({
+            callback: callback,
+            once: once
+        }), this;
+    }, Emitter.prototype.on = function(type, callback) {
+        return this._on(type, callback, !1);
+    }, Emitter.prototype.once = function(type, callback) {
+        return this._on(type, callback, !0);
+    }, Emitter.prototype.off = function(type, callback) {
+        if (!type || !callback) {
+            return this;
+        }
+        for (var events = this._events[type] || [], i = 0; i < events.length; i++) {
+            if (events[i].callback === callback) {
+                return events.splice(i, 1), this;
+            }
+        }
+        return this;
+    }, Emitter.prototype._emit = function(type, context) {
+        for (var args = [], len = arguments.length - 2; len-- > 0; ) {
+            args[len] = arguments[len + 2];
+        }
+        if (!type) {
+            return this;
+        }
+        for (var events = this._events[type] || [], targets = [], i = events.length - 1; i >= 0; i--) {
+            var event = events[i];
+            event.once && events.splice(i, 1), targets.push(event);
+        }
+        for (var i$1 = targets.length - 1; i$1 >= 0; i$1--) {
+            targets[i$1].callback.apply(context, args);
+        }
+        return this;
+    }, Emitter.prototype.emit = function(type) {
+        for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
+            args[len] = arguments[len + 1];
+        }
+        return (ref = this)._emit.apply(ref, [ type, this ].concat(args));
+    }, Emitter.prototype.cemit = function(type, context) {
+        for (var ref, args = [], len = arguments.length - 2; len-- > 0; ) {
+            args[len] = arguments[len + 2];
+        }
+        return (ref = this)._emit.apply(ref, [ type, context ].concat(args));
+    }, Emitter.prototype._emitAll = function(context) {
+        for (var args = [], len = arguments.length - 1; len-- > 0; ) {
+            args[len] = arguments[len + 1];
+        }
+        if (null == context) {
+            return this;
+        }
+        var targets = [];
+        for (var type in this._events) {
+            for (var events = this._events[type] || [], i = events.length - 1; i >= 0; i--) {
+                var event = events[i];
+                event.once && events.splice(i, 1), targets.push(event);
+            }
+        }
+        for (var i$1 = targets.length - 1; i$1 >= 0; i$1--) {
+            targets[i$1].callback.apply(context, args);
+        }
+        return this;
+    }, Emitter.prototype.emitAll = function() {
+        for (var ref, args = [], len = arguments.length; len--; ) {
+            args[len] = arguments[len];
+        }
+        return (ref = this)._emitAll.apply(ref, [ this ].concat(args));
+    }, Emitter.prototype.cemitAll = function(context) {
+        for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
+            args[len] = arguments[len + 1];
+        }
+        return (ref = this)._emitAll.apply(ref, [ context ].concat(args));
+    }, Emitter.prototype.clear = function(type) {
+        return void 0 === type && (type = ""), type ? delete this._events[type] : this._events = {}, 
+        this;
+    };
+    var isSP = function(param) {
+        var nav = {
+            userAgent: "",
+            platform: "",
+            maxTouchPoints: 0
+        };
+        param || "undefined" == typeof navigator ? "string" == typeof param ? nav.userAgent = param : param && param.userAgent && (nav = {
+            userAgent: param.userAgent,
+            platform: param.platform,
+            maxTouchPoints: param.maxTouchPoints || 0
+        }) : nav = {
+            userAgent: navigator.userAgent,
+            platform: navigator.platform,
+            maxTouchPoints: navigator.maxTouchPoints || 0
+        };
+        var userAgent = nav.userAgent, tmp = userAgent.split("[FBAN");
+        void 0 !== tmp[1] && (userAgent = tmp[0]), void 0 !== (tmp = userAgent.split("Twitter"))[1] && (userAgent = tmp[0]);
+        var match = function(userAgent) {
+            return function(regex) {
+                return regex.test(userAgent);
+            };
+        }(userAgent), result = {
+            apple: {
+                phone: match(appleIphone) && !match(windowsPhone),
+                ipod: match(appleIpod),
+                tablet: !match(appleIphone) && (match(appleTablet) || isAppleTabletOnIos13(nav)) && !match(windowsPhone),
+                universal: match(appleUniversal),
+                device: (match(appleIphone) || match(appleIpod) || match(appleTablet) || match(appleUniversal) || isAppleTabletOnIos13(nav)) && !match(windowsPhone)
+            },
+            amazon: {
+                phone: match(amazonPhone),
+                tablet: !match(amazonPhone) && match(amazonTablet),
+                device: match(amazonPhone) || match(amazonTablet)
+            },
+            android: {
+                phone: !match(windowsPhone) && match(amazonPhone) || !match(windowsPhone) && match(androidPhone),
+                tablet: !match(windowsPhone) && !match(amazonPhone) && !match(androidPhone) && (match(amazonTablet) || match(androidTablet)),
+                device: !match(windowsPhone) && (match(amazonPhone) || match(amazonTablet) || match(androidPhone) || match(androidTablet)) || match(/\bokhttp\b/i)
+            },
+            windows: {
+                phone: match(windowsPhone),
+                tablet: match(windowsTablet),
+                device: match(windowsPhone) || match(windowsTablet)
+            },
+            other: {
+                blackberry: match(otherBlackBerry),
+                blackberry10: match(otherBlackBerry10),
+                opera: match(otherOpera),
+                firefox: match(otherFirefox),
+                chrome: match(otherChrome),
+                device: match(otherBlackBerry) || match(otherBlackBerry10) || match(otherOpera) || match(otherFirefox) || match(otherChrome)
+            },
+            any: !1,
+            phone: !1,
+            tablet: !1
+        };
+        return result.any = result.apple.device || result.android.device || result.windows.device || result.other.device, 
+        result.phone = result.apple.phone || result.android.phone || result.windows.phone, 
+        result.tablet = result.apple.tablet || result.android.tablet || result.windows.tablet, 
+        result;
+    }(navigator.userAgent).any;
+    function separate(_first, _emitted) {
+        for (var first = _first.concat([]), emitted = _emitted.concat([]), both = [], i = first.length - 1; i >= 0; i--) {
+            var p = first[i], index = emitted.indexOf(p);
+            index > -1 && (first.splice(i, 1), emitted.splice(index, 1), both.push(p));
+        }
+        return {
+            both: both,
+            first: first,
+            emitted: emitted
+        };
+    }
+    function dispatch(targets, type, event) {
+        for (var i = 0; i < targets.length; i++) {
+            targets[i].emit(type, event);
+        }
+    }
+    var InteractionManager = function(Emitter) {
+        function InteractionManager() {
+            Emitter.apply(this, arguments), this._mouse = new THREE.Vector2, this._event = {
+                type: "",
+                emitted: [],
+                originalEvent: null
+            }, this._down = [], this._over = [], this.interactive = !0, this.interactiveDown = !0, 
+            this.interactiveMove = !1, this.interactiveUp = !0;
+        }
+        return Emitter && (InteractionManager.__proto__ = Emitter), InteractionManager.prototype = Object.create(Emitter && Emitter.prototype), 
+        InteractionManager.prototype.constructor = InteractionManager, InteractionManager.prototype._cast = function(e, x, y, width, height) {
+            this._event.originalEvent = e, this._event.emitted = [], this._mouse.x = x / width * 2 - 1, 
+            this._mouse.y = -y / height * 2 + 1, this.emit("cast", this._event, this._mouse);
+        }, InteractionManager.prototype.onDown = function(e, x, y, width, height) {
+            this._down = [], this.interactive && this.interactiveDown && (this._event.type = "system:interaction:pointerdown", 
+            this._cast(e, x, y, width, height), 0 !== this._event.emitted.length && (dispatch(this._event.emitted, "pointerdown", this._event), 
+            this._down = this._event.emitted));
+        }, InteractionManager.prototype.onMove = function(e, x, y, width, height) {
+            if (this.interactive && this.interactiveMove) {
+                if (this._event.type = "system:interaction:pointermove", this._cast(e, x, y, width, height), 
+                0 !== this._over.length) {
+                    if (0 === this._event.emitted.length) {
+                        return dispatch(this._over, "pointerout", this._event), void (this._over = []);
+                    }
+                    var saparated = separate(this._over, this._event.emitted);
+                    dispatch(saparated.emitted, "pointerover", this._event), dispatch(saparated.first, "pointerout", this._event), 
+                    this._over = this._event.emitted, dispatch(saparated.both, "pointermove", this._event);
+                } else {
+                    this._event.emitted.length > 0 && (dispatch(this._event.emitted, "pointerover", this._event), 
+                    this._over = this._event.emitted);
+                }
+            }
+        }, InteractionManager.prototype.onUp = function(e, x, y, width, height) {
+            if (this.interactive && this.interactiveUp) {
+                if (this._event.type = "system:interaction:pointerup", this._cast(e, x, y, width, height), 
+                0 !== this._down.length) {
+                    if (0 === this._event.emitted.length) {
+                        return dispatch(this._down, "pointerupoutside", this._event), void (this._down = []);
+                    }
+                    var saparated = separate(this._down, this._event.emitted);
+                    dispatch(saparated.emitted, "pointerup", this._event), dispatch(saparated.first, "pointerupoutside", this._event), 
+                    dispatch(saparated.both, "pointerup", this._event), dispatch(saparated.both, "pointertap", this._event), 
+                    this._down = [];
+                } else {
+                    this._event.emitted.length > 0 && dispatch(this._event.emitted, "pointerup", this._event);
+                }
+            }
+        }, InteractionManager.prototype.addCanvas = function(canvas) {
+            var this$1 = this;
+            isSP ? (canvas.addEventListener("touchstart", (function(e) {
+                this$1.onDown(e, e.touches[0].clientX - canvas.offsetLeft, e.touches[0].clientY - canvas.offsetTop, canvas.offsetWidth, canvas.offsetHeight);
+            })), canvas.addEventListener("touchmove", (function(e) {
+                this$1.onMove(e, e.touches[0].clientX - canvas.offsetLeft, e.touches[0].clientY - canvas.offsetTop, canvas.offsetWidth, canvas.offsetHeight);
+            })), canvas.addEventListener("touchend", (function(e) {
+                this$1.onUp(e, e.changedTouches[0].clientX - canvas.offsetLeft, e.changedTouches[0].clientY - canvas.offsetTop, canvas.offsetWidth, canvas.offsetHeight);
+            }))) : (canvas.addEventListener("mousedown", (function(e) {
+                this$1.onDown(e, e.offsetX, e.offsetY, canvas.offsetWidth, canvas.offsetHeight);
+            })), canvas.addEventListener("mousemove", (function(e) {
+                this$1.onMove(e, e.offsetX, e.offsetY, canvas.offsetWidth, canvas.offsetHeight);
+            })), canvas.addEventListener("mouseup", (function(e) {
+                this$1.onUp(e, e.offsetX, e.offsetY, canvas.offsetWidth, canvas.offsetHeight);
+            })));
+        }, InteractionManager;
+    }(Emitter), Application = function(options) {
         var this$1 = this;
         void 0 === options && (options = {}), this._views = [], this._lastTime = 0, this._playing = !1, 
-        this._autoAdjuster = null, this._basepath = "", this._version = "", this.interactionDown = !0, 
-        this.interactionMove = !1, this.interactionUp = !0;
+        this._autoAdjuster = null, this._basepath = "", this._version = "", this._interactionManager = new InteractionManager;
         var canvas = options.canvas || void 0, container = options.container || document.body, rendererOptions = {
             canvas: canvas,
             alpha: options.transparent || !1,
@@ -52,141 +284,16 @@
         renderer.setClearColor(backgroundColor, 0), renderer.setSize(width, height), renderer.setPixelRatio(resolution), 
         renderer.autoClear = !1, this._container = container, this._renderer = renderer, 
         this._rendererSize = new THREE.Vector2(width, height), this._basepath = basepath, 
-        this._version = version;
-        var dom = renderer.domElement;
-        dom.style.position = "absolute";
-        var isSP = function(param) {
-            var nav = {
-                userAgent: "",
-                platform: "",
-                maxTouchPoints: 0
-            };
-            param || "undefined" == typeof navigator ? "string" == typeof param ? nav.userAgent = param : param && param.userAgent && (nav = {
-                userAgent: param.userAgent,
-                platform: param.platform,
-                maxTouchPoints: param.maxTouchPoints || 0
-            }) : nav = {
-                userAgent: navigator.userAgent,
-                platform: navigator.platform,
-                maxTouchPoints: navigator.maxTouchPoints || 0
-            };
-            var userAgent = nav.userAgent, tmp = userAgent.split("[FBAN");
-            void 0 !== tmp[1] && (userAgent = tmp[0]), void 0 !== (tmp = userAgent.split("Twitter"))[1] && (userAgent = tmp[0]);
-            var match = function(userAgent) {
-                return function(regex) {
-                    return regex.test(userAgent);
-                };
-            }(userAgent), result = {
-                apple: {
-                    phone: match(appleIphone) && !match(windowsPhone),
-                    ipod: match(appleIpod),
-                    tablet: !match(appleIphone) && (match(appleTablet) || isAppleTabletOnIos13(nav)) && !match(windowsPhone),
-                    universal: match(appleUniversal),
-                    device: (match(appleIphone) || match(appleIpod) || match(appleTablet) || match(appleUniversal) || isAppleTabletOnIos13(nav)) && !match(windowsPhone)
-                },
-                amazon: {
-                    phone: match(amazonPhone),
-                    tablet: !match(amazonPhone) && match(amazonTablet),
-                    device: match(amazonPhone) || match(amazonTablet)
-                },
-                android: {
-                    phone: !match(windowsPhone) && match(amazonPhone) || !match(windowsPhone) && match(androidPhone),
-                    tablet: !match(windowsPhone) && !match(amazonPhone) && !match(androidPhone) && (match(amazonTablet) || match(androidTablet)),
-                    device: !match(windowsPhone) && (match(amazonPhone) || match(amazonTablet) || match(androidPhone) || match(androidTablet)) || match(/\bokhttp\b/i)
-                },
-                windows: {
-                    phone: match(windowsPhone),
-                    tablet: match(windowsTablet),
-                    device: match(windowsPhone) || match(windowsTablet)
-                },
-                other: {
-                    blackberry: match(otherBlackBerry),
-                    blackberry10: match(otherBlackBerry10),
-                    opera: match(otherOpera),
-                    firefox: match(otherFirefox),
-                    chrome: match(otherChrome),
-                    device: match(otherBlackBerry) || match(otherBlackBerry10) || match(otherOpera) || match(otherFirefox) || match(otherChrome)
-                },
-                any: !1,
-                phone: !1,
-                tablet: !1
-            };
-            return result.any = result.apple.device || result.android.device || result.windows.device || result.other.device, 
-            result.phone = result.apple.phone || result.android.phone || result.windows.phone, 
-            result.tablet = result.apple.tablet || result.android.tablet || result.windows.tablet, 
-            result;
-        }(navigator.userAgent).any, raycaster = new THREE.Raycaster, mouse = new THREE.Vector2, event = {
-            type: "",
-            emitted: [],
-            originalEvent: null
-        }, down = [], over = [], cast = function(e, x, y) {
-            event.originalEvent = e, event.emitted = [];
-            var w = dom.offsetWidth, h = dom.offsetHeight;
-            mouse.x = x / w * 2 - 1, mouse.y = -y / h * 2 + 1;
+        this._version = version, renderer.domElement.style.position = "absolute";
+        var raycaster = new THREE.Raycaster;
+        this._interactionManager.addCanvas(renderer.domElement), this._interactionManager.on("cast", (function(event, mouse) {
             for (var c = this$1._views, i = c.length - 1; i >= 0; i--) {
                 if (event.emitted.length > 0) {
                     return;
                 }
                 c[i].onInteraction(event, raycaster, mouse);
             }
-        }, dispatch = function(targets, type) {
-            for (var i = 0; i < targets.length; i++) {
-                targets[i].emit(type, event);
-            }
-        }, separate = function(_first, _emitted) {
-            for (var first = _first.concat([]), emitted = _emitted.concat([]), both = [], i = first.length - 1; i >= 0; i--) {
-                var p = first[i], index = emitted.indexOf(p);
-                index > -1 && (first.splice(i, 1), emitted.splice(index, 1), both.push(p));
-            }
-            return {
-                both: both,
-                first: first,
-                emitted: emitted
-            };
-        }, startHandler = function(e, x, y) {
-            down = [], this$1.interactionDown && (event.type = "system:interaction:pointerdown", 
-            cast(e, x, y), 0 !== event.emitted.length && (dispatch(event.emitted, "pointerdown"), 
-            down = event.emitted));
-        }, moveHandler = function(e, x, y) {
-            if (this$1.interactionMove) {
-                if (event.type = "system:interaction:pointermove", cast(e, x, y), 0 !== over.length) {
-                    if (0 === event.emitted.length) {
-                        return dispatch(over, "pointerout"), void (over = []);
-                    }
-                    var saparated = separate(over, event.emitted);
-                    dispatch(saparated.emitted, "pointerover"), dispatch(saparated.first, "pointerout"), 
-                    over = event.emitted, dispatch(saparated.both, "pointermove");
-                } else {
-                    event.emitted.length > 0 && (dispatch(event.emitted, "pointerover"), over = event.emitted);
-                }
-            }
-        }, endHandler = function(e, x, y) {
-            if (this$1.interactionUp) {
-                if (event.type = "system:interaction:pointerup", cast(e, x, y), 0 !== down.length) {
-                    if (0 === event.emitted.length) {
-                        return dispatch(down, "pointerupoutside"), void (down = []);
-                    }
-                    var saparated = separate(down, event.emitted);
-                    dispatch(saparated.emitted, "pointerup"), dispatch(saparated.first, "pointerupoutside"), 
-                    dispatch(saparated.both, "pointerup"), dispatch(saparated.both, "pointertap"), down = [];
-                } else {
-                    event.emitted.length > 0 && dispatch(event.emitted, "pointerup");
-                }
-            }
-        };
-        isSP ? (dom.addEventListener("touchstart", (function(e) {
-            startHandler(e, e.touches[0].clientX - dom.offsetLeft, e.touches[0].clientY - dom.offsetTop);
-        })), dom.addEventListener("touchmove", (function(e) {
-            moveHandler(e, e.touches[0].clientX - dom.offsetLeft, e.touches[0].clientY - dom.offsetTop);
-        })), dom.addEventListener("touchend", (function(e) {
-            endHandler(e, e.changedTouches[0].clientX - dom.offsetLeft, e.changedTouches[0].clientY - dom.offsetTop);
-        }))) : (dom.addEventListener("mousedown", (function(e) {
-            startHandler(e, e.offsetX, e.offsetY);
-        })), dom.addEventListener("mousemove", (function(e) {
-            moveHandler(e, e.offsetX, e.offsetY);
-        })), dom.addEventListener("mouseup", (function(e) {
-            endHandler(e, e.offsetX, e.offsetY);
-        }))), window.addEventListener("visibilitychange", (function(e) {
+        })), window.addEventListener("visibilitychange", (function(e) {
             this$1._lastTime = e.timeStamp;
         }));
         var step = function(timestamp) {
@@ -200,6 +307,9 @@
         });
     }, prototypeAccessors$1 = {
         renderer: {
+            configurable: !0
+        },
+        interactionManager: {
             configurable: !0
         },
         element: {
@@ -232,6 +342,8 @@
         }));
     }, prototypeAccessors$1.renderer.get = function() {
         return this._renderer;
+    }, prototypeAccessors$1.interactionManager.get = function() {
+        return this._interactionManager;
     }, prototypeAccessors$1.element.get = function() {
         return this._renderer.domElement;
     }, prototypeAccessors$1.width.get = function() {
@@ -399,99 +511,6 @@
         rotation.x = x, rotation.y = y, rotation.z = z, this._object.body.setRotationXyz(rotation), 
         this._object.updateTransform();
     }, Object.defineProperties(BodyRotation.prototype, prototypeAccessors$3);
-    /*!
-     * @tawaship/emitter - v3.1.1
-     * 
-     * @author tawaship (makazu.mori@gmail.com)
-     * @license MIT
-     */
-    var Emitter = function() {
-        this._events = {};
-    };
-    Emitter.prototype._on = function(type, callback, once) {
-        if (!type || !callback) {
-            return this;
-        }
-        for (var events = this._events[type] = this._events[type] || [], i = 0; i < events.length; i++) {
-            if (events[i].callback === callback) {
-                return this;
-            }
-        }
-        return events.push({
-            callback: callback,
-            once: once
-        }), this;
-    }, Emitter.prototype.on = function(type, callback) {
-        return this._on(type, callback, !1);
-    }, Emitter.prototype.once = function(type, callback) {
-        return this._on(type, callback, !0);
-    }, Emitter.prototype.off = function(type, callback) {
-        if (!type || !callback) {
-            return this;
-        }
-        for (var events = this._events[type] || [], i = 0; i < events.length; i++) {
-            if (events[i].callback === callback) {
-                return events.splice(i, 1), this;
-            }
-        }
-        return this;
-    }, Emitter.prototype._emit = function(type, context) {
-        for (var args = [], len = arguments.length - 2; len-- > 0; ) {
-            args[len] = arguments[len + 2];
-        }
-        if (!type) {
-            return this;
-        }
-        for (var events = this._events[type] || [], targets = [], i = events.length - 1; i >= 0; i--) {
-            var event = events[i];
-            event.once && events.splice(i, 1), targets.push(event);
-        }
-        for (var i$1 = targets.length - 1; i$1 >= 0; i$1--) {
-            targets[i$1].callback.apply(context, args);
-        }
-        return this;
-    }, Emitter.prototype.emit = function(type) {
-        for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
-            args[len] = arguments[len + 1];
-        }
-        return (ref = this)._emit.apply(ref, [ type, this ].concat(args));
-    }, Emitter.prototype.cemit = function(type, context) {
-        for (var ref, args = [], len = arguments.length - 2; len-- > 0; ) {
-            args[len] = arguments[len + 2];
-        }
-        return (ref = this)._emit.apply(ref, [ type, context ].concat(args));
-    }, Emitter.prototype._emitAll = function(context) {
-        for (var args = [], len = arguments.length - 1; len-- > 0; ) {
-            args[len] = arguments[len + 1];
-        }
-        if (null == context) {
-            return this;
-        }
-        var targets = [];
-        for (var type in this._events) {
-            for (var events = this._events[type] || [], i = events.length - 1; i >= 0; i--) {
-                var event = events[i];
-                event.once && events.splice(i, 1), targets.push(event);
-            }
-        }
-        for (var i$1 = targets.length - 1; i$1 >= 0; i$1--) {
-            targets[i$1].callback.apply(context, args);
-        }
-        return this;
-    }, Emitter.prototype.emitAll = function() {
-        for (var ref, args = [], len = arguments.length; len--; ) {
-            args[len] = arguments[len];
-        }
-        return (ref = this)._emitAll.apply(ref, [ this ].concat(args));
-    }, Emitter.prototype.cemitAll = function(context) {
-        for (var ref, args = [], len = arguments.length - 1; len-- > 0; ) {
-            args[len] = arguments[len + 1];
-        }
-        return (ref = this)._emitAll.apply(ref, [ context ].concat(args));
-    }, Emitter.prototype.clear = function(type) {
-        return void 0 === type && (type = ""), type ? delete this._events[type] : this._events = {}, 
-        this;
-    };
     /*!
      * @tawaship/task - v1.1.0
      * 
@@ -1281,9 +1300,10 @@
     exports.Anchor = Anchor, exports.Application = Application, exports.BodyPosition = BodyPosition, 
     exports.BodyRotation = BodyRotation, exports.Camera = Camera, exports.Container2D = Container2D, 
     exports.Container3D = Container3D, exports.Content = Content, exports.DisplayObject = DisplayObject, 
-    exports.Mesh = Mesh, exports.Object2D = Object2D, exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, 
-    exports.PhysicsView = PhysicsView, exports.RigidBody = RigidBody, exports.SensoredShape = SensoredShape, 
-    exports.Shape = Shape, exports.Sprite = Sprite, exports.View = View;
+    exports.InteractionManager = InteractionManager, exports.Mesh = Mesh, exports.Object2D = Object2D, 
+    exports.Object3D = Object3D, exports.PhysicsObject3D = PhysicsObject3D, exports.PhysicsView = PhysicsView, 
+    exports.RigidBody = RigidBody, exports.SensoredShape = SensoredShape, exports.Shape = Shape, 
+    exports.Sprite = Sprite, exports.View = View;
 }(this.TLAP = this.TLAP || {}, THREE, {
     GLTFLoader: THREE.GLTFLoader
 });

@@ -9,6 +9,7 @@ export * from './Content';
 export * from './DisplayObject';
 export * from './IDeliverData';
 export * from './IMesh';
+export * from './InteractionManager';
 export * from './Mesh';
 export * from './Object2D';
 export * from './Object3D';
