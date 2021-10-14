@@ -367,7 +367,7 @@
         for (var c = this._views, e = {
             delta: delta
         }, i = 0; i < c.length; i++) {
-            c[i].update(e);
+            c[i].update(e, !1);
         }
         this.render();
     }, Application.prototype.render = function() {
@@ -577,7 +577,8 @@
         function DisplayObject(three) {
             var this$1 = this;
             Emitter.call(this), this._size = new THREE.Vector3, this._pivot = new THREE.Vector3, 
-            this._children = [], this.interactive = !1, this._three = this._sub = three, three.addEventListener("system:interaction:pointerdown", (function(event) {
+            this._children = [], this.interactive = !1, this.taskEnabledChildren = !0, this._three = this._sub = three, 
+            three.addEventListener("system:interaction:pointerdown", (function(event) {
                 this$1.interactive && event.emitted.push(this$1);
             })), three.addEventListener("system:interaction:pointerup", (function(event) {
                 this$1.interactive && event.emitted.push(this$1);
@@ -594,6 +595,9 @@
                 configurable: !0
             },
             task: {
+                configurable: !0
+            },
+            taskEnabled: {
                 configurable: !0
             },
             parent: {
@@ -631,6 +635,10 @@
             return this._three;
         }, prototypeAccessors.task.get = function() {
             return this._task;
+        }, prototypeAccessors.taskEnabled.get = function() {
+            return this._task.enabled;
+        }, prototypeAccessors.taskEnabled.set = function(value) {
+            this._task.enabled = value;
         }, prototypeAccessors.parent.get = function() {
             return this._three.userData.parent;
         }, prototypeAccessors.children.get = function() {
@@ -659,10 +667,10 @@
             return this._three.scale;
         }, prototypeAccessors.pivot.get = function() {
             return this._pivot;
-        }, DisplayObject.prototype.update = function(e) {
-            this.updateTransform(), this.updateTask(e);
+        }, DisplayObject.prototype.update = function(e, taskDisabledChildren) {
+            this.updateTransform(), !taskDisabledChildren && this.updateTask(e), taskDisabledChildren = taskDisabledChildren || !this.taskEnabledChildren;
             for (var c = this._children, i = 0; i < c.length; i++) {
-                c[i].update(e);
+                c[i].update(e, taskDisabledChildren);
             }
         }, DisplayObject.prototype.updateBoundingBox = function() {
             this.updateTransform(), _box.setFromObject(this._sub), _box.getSize(this._size), 
@@ -965,12 +973,6 @@
             return this._three.add(three), three;
         }, View.prototype.remove = function(three) {
             return this._three.remove(three), three;
-        }, View.prototype.update = function(e) {
-            this.updateTask(e);
-            var c = this._children;
-            for (var i in this._children) {
-                c[i].update(e);
-            }
         }, View.prototype.render = function(renderer) {
             for (var c = this._cameras, i = 0; i < c.length; i++) {
                 renderer.clearDepth(), c[i].render(renderer, this._three);
@@ -1047,18 +1049,14 @@
                 return object.body.off("sensoredShapeAdded", this._onShapeAdded), object.body.off("sensoredShapeRemoved", this._onShapeRemoved), 
                 o;
             }
-        }, PhysicsView.prototype.update = function(e) {
+        }, PhysicsView.prototype.update = function(e, taskDisabledChildren) {
             if (this.physicsEnabled) {
                 this._world.step(1 / 60);
                 for (var i = 0; i < this._sensoredShapes.length; i++) {
                     this._sensoredShapes[i].aabbTest(this._world);
                 }
             }
-            this.updateTask(e);
-            var c = this._children;
-            for (var i$1 in this._children) {
-                c[i$1].update(e);
-            }
+            View.prototype.update.call(this, e, taskDisabledChildren);
         }, Object.defineProperties(PhysicsView.prototype, prototypeAccessors), PhysicsView;
     }(View), contactCallback = new OIMO$1.ContactCallback;
     function contactHandler(type, e) {

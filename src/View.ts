@@ -58,7 +58,7 @@ export class View extends Object3D<THREE.Scene> {
 		
 		return three;
 	}
-	
+	/*
 	update(e: ITickerData) {
 		this.updateTask(e);
 		
@@ -67,7 +67,7 @@ export class View extends Object3D<THREE.Scene> {
 			c[i].update(e);
 		}
 	}
-	
+	*/
 	render(renderer: THREE.WebGLRenderer) {
 		const c = this._cameras;
 		

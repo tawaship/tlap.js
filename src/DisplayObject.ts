@@ -20,6 +20,7 @@ export abstract class DisplayObject<T extends THREE.Object3D = THREE.Object3D> e
 	protected _task: Task;
 	
 	interactive: boolean = false;
+	taskEnabledChildren: boolean = true;
 	
 	constructor(three: T) {
 		super();
@@ -68,6 +69,14 @@ export abstract class DisplayObject<T extends THREE.Object3D = THREE.Object3D> e
 	
 	get task() {
 		return this._task;
+	}
+	
+	get taskEnabled() {
+		return this._task.enabled;
+	}
+	
+	set taskEnabled(value: boolean) {
+		this._task.enabled = value;
 	}
 	
 	get parent(): DisplayObject | null {
@@ -135,13 +144,14 @@ export abstract class DisplayObject<T extends THREE.Object3D = THREE.Object3D> e
 		return this._pivot;
 	}
 	
-	update(e: ITickerData) {
+	update(e: ITickerData, taskDisabledChildren: boolean) {
 		this.updateTransform();
-		this.updateTask(e);
+		!taskDisabledChildren && this.updateTask(e);
+		taskDisabledChildren = taskDisabledChildren || !this.taskEnabledChildren;
 		
 		const c = this._children;
 		for (let i = 0; i < c.length; i++) {
-			c[i].update(e);
+			c[i].update(e, taskDisabledChildren);
 		}
 	}
 	

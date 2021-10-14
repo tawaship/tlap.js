@@ -78,7 +78,7 @@ export class PhysicsView extends View {
 		return o;
 	}
 	
-	update(e: ITickerData) {
+	update(e: ITickerData, taskDisabledChildren: boolean) {
 		if (this.physicsEnabled) {
 			this._world.step(1 / 60);
 			
@@ -99,11 +99,6 @@ export class PhysicsView extends View {
 			}
 		}
 		
-		this.updateTask(e);
-		
-		const c = this._children;
-		for (let i in this._children) {
-			c[i].update(e);
-		}
+		super.update(e, taskDisabledChildren);
 	}
 }

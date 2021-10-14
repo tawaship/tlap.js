@@ -227,7 +227,7 @@ export class Application {
 		const e: ITickerData = { delta };
 		
 		for (let i = 0; i < c.length; i++) {
-			c[i].update(e);
+			c[i].update(e, false);
 		}
 		
 		this.render();
