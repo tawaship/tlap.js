@@ -8,7 +8,7 @@ import { IDeliverData } from './IDeliverData';
 export class View extends Object3D<THREE.Scene> {
 	private _cameras: Camera[] = [];
 	
-	constructor($?: IDeliverData) {
+	constructor() {
 		super(new THREE.Scene());
 		
 		this.interactive = true;

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
-import { View } from './View';
+import { ViewFrame } from './ViewFrame';
+import { IDeliverData, IAssetDictionary, ITextureDictionary, IGLTFDictionary, IResourceDictionary, IVariableDictionary } from './IDeliverData';
 
 /**
  * @ignore
@@ -28,15 +29,7 @@ export interface IAssetDefinitionDictionary<T> {
 	[key: string]: T;
 }
 
-export interface IAssetDictionary<T> {
-	[key: string]: T;
-}
-
 export interface ITextureDefinitionDictionary extends IAssetDefinitionDictionary<string> {
-
-}
-
-export interface ITextureDictionary extends IAssetDictionary<THREE.Texture> {
 
 }
 
@@ -69,10 +62,6 @@ export interface IGLTFDefinitionDictionary extends IAssetDefinitionDictionary<st
 
 }
 
-export interface IGLTFDictionary extends IAssetDictionary<GLTF> {
-
-}
-
 /**
  * @ignore
  */
@@ -102,40 +91,45 @@ export interface IAssetLoaderDelegate<T> {
 	(data: { [key: string]: any }, basepath: string, version: string): Promise<IAssetDictionary<T>>;
 }
 
-export interface IResourceDictionary {
-	[key: string]: IAssetDictionary<any>;
-}
-
-export interface IVariableDictionary {
-	[key: string]: any;
-}
 
 /**
  * @ignore
  */
 const _assetLoaders: { [key: string]: IAssetLoaderDelegate<any> } = {};
 
+/** 
+ * @ignore
+ */
+let _contentID = 0;
+
+export interface IContentCreatedHandler {
+	(viewFrame: ViewFrame, $: IDeliverData): void;
+}
+
 export class Content {
 	private _assetDefines: { [ley: string]: IAssetDictionary<any> } = {};
-	private _viewClasses: typeof View[] = [];
 	private _vars: IVariableDictionary = {};
+	private _id: number;
+	private _attachHandler: IContentCreatedHandler = (viewFrame: ViewFrame, $: IDeliverData) => {};
 	
-	get viewClasses() {
-		return this._viewClasses;
+	constructor() {
+		this._id = ++_contentID;
+	}
+	
+	get id() {
+		return this._id;
 	}
 	
 	get vars() {
 		return Object.assign({}, this._vars);
 	}
 	
-	defineViews(viewClasses: typeof View | typeof View[]) {
-		if (!Array.isArray(viewClasses)) {
-			viewClasses = [ viewClasses ];
-		}
-		
-		viewClasses.forEach(viewClass => {
-			this._viewClasses.push(viewClass);
-		});
+	onAttach(viewFrame: ViewFrame, $: IDeliverData) {
+		this._attachHandler(viewFrame, $);
+	}
+	
+	defineAttachHandler(handler: IContentCreatedHandler) {
+		this._attachHandler = handler;
 	}
 	
 	defineAssets<T>(key: string, data: IAssetDefinitionDictionary<T>) {

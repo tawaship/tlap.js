@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import isMobile from 'ismobilejs';
-import { View } from './View';
+import { ViewFrame } from './ViewFrame';
 import { DisplayObject, ITickerData } from './DisplayObject';
 import { InteractionManager, IInteractionEvent } from './InteractionManager';
 import { Content } from './Content';
@@ -55,10 +55,16 @@ export interface IVertical {
 
 export interface IRect extends ISize, IPosition {}
 
+/**
+ * @ignore
+ */
+
+
 export class Application {
 	private _container: HTMLElement;
 	private _renderer: THREE.WebGLRenderer;
-	private _views: View[] = [];
+	private _contents: { [id: number]: Content } = {};
+	private _viewFrames: ViewFrame[] = [];
 	private _lastTime: number = 0;
 	private _playing: boolean = false;
 	private _rendererSize: THREE.Vector2;
@@ -105,19 +111,16 @@ export class Application {
 		this._interactionManager.addCanvas(renderer.domElement);
 		
 		this._interactionManager.on('cast', (event: IInteractionEvent, mouse: THREE.Vector2) => {
-			const c = this._views;
-			for (let i = c.length - 1; i >= 0; i--) {
-				if (event.emitted.length > 0) {
-					return;
-				}
-				
-				c[i].onInteraction(event, raycaster, mouse);
+			for (let i = 0; i < this._viewFrames.length; i++) {
+				this._viewFrames[i].onInteraction(event, raycaster, mouse);
 			}
 		});
 		
 		window.addEventListener('visibilitychange', e => {
 			this._lastTime = e.timeStamp;
 		});
+		
+		const tickerData: ITickerData = { delta: 1 };
 		
 		const step = (timestamp: number) => {
 			const delta = (timestamp - this._lastTime) * 0.06;
@@ -128,7 +131,11 @@ export class Application {
 				return;
 			}
 			
-			this.update(delta);
+			tickerData.delta = delta;
+			
+			this.update(tickerData);
+			this.render();
+			
 			requestAnimationFrame(step);
 		};
 		
@@ -148,6 +155,8 @@ export class Application {
 	}
 	
 	attachAsync(content: Content) {
+		this.detach(content);
+		
 		return content.loadAssetsAsync(this._basepath, this._version)
 			.then(resources => {
 				return {
@@ -158,13 +167,22 @@ export class Application {
 				};
 			})
 			.then(($: IDeliverData) => {
-				const viewClasses = content.viewClasses;
-				for (let i = 0; i < viewClasses.length; i++) {
-					this.addView(new viewClasses[i]($));
-				}
+				const viewFrame = new ViewFrame(content.id);
+				content.onAttach(viewFrame, $);
+				
+				this._viewFrames.push(viewFrame);
 				
 				return this;
 			});
+	}
+	
+	detach(content: Content) {
+		for (let i = 0; i < this._viewFrames.length; i++) {
+			if (this._viewFrames[i].id === content.id) {
+				this._viewFrames.splice(i, 1);
+				break;
+			}
+		}
 	}
 	
 	get renderer() {
@@ -187,23 +205,6 @@ export class Application {
 		return this._rendererSize.y;
 	}
 	
-	addView(view: View) {
-		this._views.push(view);
-		
-		return view;
-	}
-	
-	removeView(view: View) {
-		const index = this._views.indexOf(view);
-		if (index === -1) {
-			return;
-		}
-		
-		this._views.splice(index, 1);
-		
-		return view;
-	}
-	
 	play() {
 		this._container.appendChild(this._renderer.domElement);
 		
@@ -222,22 +223,20 @@ export class Application {
 		return this;
 	}
 	
-	update(delta: number) {
-		const c = this._views;
-		const e: ITickerData = { delta };
+	update(e: ITickerData) {
+		const c = this._viewFrames;
 		
 		for (let i = 0; i < c.length; i++) {
-			c[i].update(e, false);
+			c[i].update(e);
 		}
-		
-		this.render();
 	}
 	
 	render() {
 		this._renderer.setViewport(0, 0, this._rendererSize.x, this._rendererSize.y);
 		this._renderer.clear();
 		
-		const c = this._views;
+		const c = this._viewFrames;
+		
 		for (let i = 0; i < c.length; i++) {
 			c[i].render(this._renderer);
 		}

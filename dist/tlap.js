@@ -1,5 +1,5 @@
 /*!
- * tlap.js - v0.2.1
+ * tlap.js - v0.3.0
  * 
  * @require three.js v0.127.0
  * @author tawaship (makazu.mori@gmail.com)
@@ -36,9 +36,6 @@
         void 0 === y && (y = x), void 0 === z && (z = y), this._x = x, this._y = y, this._z = z, 
         this._mesh.updateGeometryPosition();
     }, Object.defineProperties(Anchor.prototype, prototypeAccessors);
-    var appleIphone = /iPhone/i, appleIpod = /iPod/i, appleTablet = /iPad/i, appleUniversal = /\biOS-universal(?:.+)Mac\b/i, androidPhone = /\bAndroid(?:.+)Mobile\b/i, androidTablet = /Android/i, amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i, amazonTablet = /Silk/i, windowsPhone = /Windows Phone/i, windowsTablet = /\bWindows(?:.+)ARM\b/i, otherBlackBerry = /BlackBerry/i, otherBlackBerry10 = /BB10/i, otherOpera = /Opera Mini/i, otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i, otherFirefox = /Mobile(?:.+)Firefox\b/i, isAppleTabletOnIos13 = function(navigator) {
-        return void 0 !== navigator && "MacIntel" === navigator.platform && "number" == typeof navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && "undefined" == typeof MSStream;
-    };
     /*!
      * @tawaship/emitter - v3.1.1
      * 
@@ -131,6 +128,49 @@
     }, Emitter.prototype.clear = function(type) {
         return void 0 === type && (type = ""), type ? delete this._events[type] : this._events = {}, 
         this;
+    };
+    var ViewFrame = function(Emitter) {
+        function ViewFrame(id) {
+            Emitter.call(this), this._views = [], this._id = id;
+        }
+        Emitter && (ViewFrame.__proto__ = Emitter), ViewFrame.prototype = Object.create(Emitter && Emitter.prototype), 
+        ViewFrame.prototype.constructor = ViewFrame;
+        var prototypeAccessors = {
+            id: {
+                configurable: !0
+            }
+        };
+        return prototypeAccessors.id.get = function() {
+            return this._id;
+        }, ViewFrame.prototype.addView = function(view) {
+            return this.removeView(view), this._views.push(view), view;
+        }, ViewFrame.prototype.addViewAt = function(view, index) {
+            return this.removeView(view), this._views.splice(index, 0, view), view;
+        }, ViewFrame.prototype.removeView = function(view) {
+            var index = this._views.indexOf(view);
+            if (-1 !== index) {
+                return this._views.splice(index, 1), view;
+            }
+        }, ViewFrame.prototype.removeAllViews = function() {
+            this._views = [];
+        }, ViewFrame.prototype.onInteraction = function(event, raycaster, mouse) {
+            for (var c = this._views, i = c.length - 1; i >= 0; i--) {
+                if (event.emitted.length > 0) {
+                    return;
+                }
+                c[i].onInteraction(event, raycaster, mouse);
+            }
+        }, ViewFrame.prototype.update = function(e) {
+            for (var c = this._views, i = 0; i < c.length; i++) {
+                c[i].update(e, !1);
+            }
+        }, ViewFrame.prototype.render = function(renderer) {
+            for (var c = this._views, i = 0; i < c.length; i++) {
+                c[i].render(renderer);
+            }
+        }, Object.defineProperties(ViewFrame.prototype, prototypeAccessors), ViewFrame;
+    }(Emitter), appleIphone = /iPhone/i, appleIpod = /iPod/i, appleTablet = /iPad/i, appleUniversal = /\biOS-universal(?:.+)Mac\b/i, androidPhone = /\bAndroid(?:.+)Mobile\b/i, androidTablet = /Android/i, amazonPhone = /(?:SD4930UR|\bSilk(?:.+)Mobile\b)/i, amazonTablet = /Silk/i, windowsPhone = /Windows Phone/i, windowsTablet = /\bWindows(?:.+)ARM\b/i, otherBlackBerry = /BlackBerry/i, otherBlackBerry10 = /BB10/i, otherOpera = /Opera Mini/i, otherChrome = /\b(CriOS|Chrome)(?:.+)Mobile/i, otherFirefox = /Mobile(?:.+)Firefox\b/i, isAppleTabletOnIos13 = function(navigator) {
+        return void 0 !== navigator && "MacIntel" === navigator.platform && "number" == typeof navigator.maxTouchPoints && navigator.maxTouchPoints > 1 && "undefined" == typeof MSStream;
     };
     var isSP = function(param) {
         var nav = {
@@ -274,8 +314,9 @@
         }, InteractionManager;
     }(Emitter), Application = function(options) {
         var this$1 = this;
-        void 0 === options && (options = {}), this._views = [], this._lastTime = 0, this._playing = !1, 
-        this._autoAdjuster = null, this._basepath = "", this._version = "", this._interactionManager = new InteractionManager;
+        void 0 === options && (options = {}), this._contents = {}, this._viewFrames = [], 
+        this._lastTime = 0, this._playing = !1, this._autoAdjuster = null, this._basepath = "", 
+        this._version = "", this._interactionManager = new InteractionManager;
         var canvas = options.canvas || void 0, container = options.container || document.body, rendererOptions = {
             canvas: canvas,
             alpha: options.transparent || !1,
@@ -287,18 +328,18 @@
         this._version = version, renderer.domElement.style.position = "absolute";
         var raycaster = new THREE.Raycaster;
         this._interactionManager.addCanvas(renderer.domElement), this._interactionManager.on("cast", (function(event, mouse) {
-            for (var c = this$1._views, i = c.length - 1; i >= 0; i--) {
-                if (event.emitted.length > 0) {
-                    return;
-                }
-                c[i].onInteraction(event, raycaster, mouse);
+            for (var i = 0; i < this$1._viewFrames.length; i++) {
+                this$1._viewFrames[i].onInteraction(event, raycaster, mouse);
             }
         })), window.addEventListener("visibilitychange", (function(e) {
             this$1._lastTime = e.timeStamp;
         }));
-        var step = function(timestamp) {
+        var tickerData = {
+            delta: 1
+        }, step = function(timestamp) {
             var delta = .06 * (timestamp - this$1._lastTime);
-            this$1._lastTime = timestamp, this$1._playing ? (this$1.update(delta), requestAnimationFrame(step)) : requestAnimationFrame(step);
+            this$1._lastTime = timestamp, this$1._playing ? (tickerData.delta = delta, this$1.update(tickerData), 
+            this$1.render(), requestAnimationFrame(step)) : requestAnimationFrame(step);
         };
         requestAnimationFrame(step), autoAdjust && (this.autoAdjuster = !0 === autoAdjust ? function() {
             this$1.fullScreen();
@@ -327,7 +368,7 @@
     };
     Application.prototype.attachAsync = function(content) {
         var this$1 = this;
-        return content.loadAssetsAsync(this._basepath, this._version).then((function(resources) {
+        return this.detach(content), content.loadAssetsAsync(this._basepath, this._version).then((function(resources) {
             return {
                 width: this$1._rendererSize.width,
                 height: this$1._rendererSize.height,
@@ -335,11 +376,16 @@
                 vars: content.vars
             };
         })).then((function($) {
-            for (var viewClasses = content.viewClasses, i = 0; i < viewClasses.length; i++) {
-                this$1.addView(new viewClasses[i]($));
-            }
-            return this$1;
+            var viewFrame = new ViewFrame(content.id);
+            return content.onAttach(viewFrame, $), this$1._viewFrames.push(viewFrame), this$1;
         }));
+    }, Application.prototype.detach = function(content) {
+        for (var i = 0; i < this._viewFrames.length; i++) {
+            if (this._viewFrames[i].id === content.id) {
+                this._viewFrames.splice(i, 1);
+                break;
+            }
+        }
     }, prototypeAccessors$1.renderer.get = function() {
         return this._renderer;
     }, prototypeAccessors$1.interactionManager.get = function() {
@@ -350,29 +396,19 @@
         return this._rendererSize.x;
     }, prototypeAccessors$1.height.get = function() {
         return this._rendererSize.y;
-    }, Application.prototype.addView = function(view) {
-        return this._views.push(view), view;
-    }, Application.prototype.removeView = function(view) {
-        var index = this._views.indexOf(view);
-        if (-1 !== index) {
-            return this._views.splice(index, 1), view;
-        }
     }, Application.prototype.play = function() {
         return this._container.appendChild(this._renderer.domElement), this.start();
     }, Application.prototype.start = function() {
         return this._playing = !0, this;
     }, Application.prototype.stop = function() {
         return this._playing = !1, this;
-    }, Application.prototype.update = function(delta) {
-        for (var c = this._views, e = {
-            delta: delta
-        }, i = 0; i < c.length; i++) {
-            c[i].update(e, !1);
+    }, Application.prototype.update = function(e) {
+        for (var c = this._viewFrames, i = 0; i < c.length; i++) {
+            c[i].update(e);
         }
-        this.render();
     }, Application.prototype.render = function() {
         this._renderer.setViewport(0, 0, this._rendererSize.x, this._rendererSize.y), this._renderer.clear();
-        for (var c = this._views, i = 0; i < c.length; i++) {
+        for (var c = this._viewFrames, i = 0; i < c.length; i++) {
             c[i].render(this._renderer);
         }
     }, prototypeAccessors$1.autoAdjuster.get = function() {
@@ -785,25 +821,25 @@
     function resolveVersion(url, version) {
         return version ? url + (url.match(/\?/) ? "&" : "?") + "_fv=" + version : url;
     }
-    var _assetLoaders = {}, Content = function() {
-        this._assetDefines = {}, this._viewClasses = [], this._vars = {};
+    var _assetLoaders = {}, _contentID = 0, Content = function() {
+        this._assetDefines = {}, this._vars = {}, this._attachHandler = function(viewFrame, $) {}, 
+        this._id = ++_contentID;
     }, prototypeAccessors$5 = {
-        viewClasses: {
+        id: {
             configurable: !0
         },
         vars: {
             configurable: !0
         }
     };
-    prototypeAccessors$5.viewClasses.get = function() {
-        return this._viewClasses;
+    prototypeAccessors$5.id.get = function() {
+        return this._id;
     }, prototypeAccessors$5.vars.get = function() {
         return Object.assign({}, this._vars);
-    }, Content.prototype.defineViews = function(viewClasses) {
-        var this$1 = this;
-        Array.isArray(viewClasses) || (viewClasses = [ viewClasses ]), viewClasses.forEach((function(viewClass) {
-            this$1._viewClasses.push(viewClass);
-        }));
+    }, Content.prototype.onAttach = function(viewFrame, $) {
+        this._attachHandler(viewFrame, $);
+    }, Content.prototype.defineAttachHandler = function(handler) {
+        this._attachHandler = handler;
     }, Content.prototype.defineAssets = function(key, data) {
         for (var i in this._assetDefines[key] = this._assetDefines[key] || {}, data) {
             this._assetDefines[key][i] = data[i];
@@ -946,7 +982,7 @@
             this._body.removeCollisionMask(collisionMask);
         }, Object.defineProperties(PhysicsObject3D.prototype, prototypeAccessors), PhysicsObject3D;
     }(Object3D), View = function(Object3D) {
-        function View($) {
+        function View() {
             Object3D.call(this, new THREE.Scene), this._cameras = [], this.interactive = !0;
         }
         Object3D && (View.__proto__ = Object3D), View.prototype = Object.create(Object3D && Object3D.prototype), 

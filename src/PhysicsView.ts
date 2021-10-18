@@ -3,6 +3,7 @@ import { View } from './View';
 import { ITickerData } from './DisplayObject';
 import { PhysicsObject3D } from './PhysicsObject3D';
 import { Shape, SensoredShape } from './Shape';
+import { IDeliverData } from './IDeliverData';
 import OIMO from './OIMO';
 
 export class PhysicsView extends View {

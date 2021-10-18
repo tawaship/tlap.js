@@ -403,7 +403,7 @@
 					
 					const reload = container.addChild(new TLAP.Sprite($.resources.textures.reload));
 					reload.on('pointertap', () => {
-						location.reload();
+						this.emit('remove')
 					});
 					reload.interactive = true;
 					
@@ -441,11 +441,24 @@
 				coin: 'assets/coin.glb'
 			});
 			
-			content.defineViews([
-				BackgroundView,
-				MainView,
-				UIView
-			]);
+			content.defineAttachHandler((viewFrame, $) => {
+				viewFrame.addView(new BackgroundView($));
+				let mainView = viewFrame.addView(new MainView($));
+				viewFrame.addView(new UIView($))
+					.on('remove', () => {
+						viewFrame.removeView(mainView);
+						mainView = viewFrame.addViewAt(new MainView($), 1);
+					});
+				
+			});
+			
+			/*
+			content.defineAttachHandler((viewFrame, $) => {
+				viewFrame.addView(new BackgroundView($));
+				viewFrame.addView(new MainView($));
+				viewFrame.addView(new UIView($));
+			});
+			//*/
 			
 			app.fullScreen().attachAsync(content)
 				.then(() => {
